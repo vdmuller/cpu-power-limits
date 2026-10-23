@@ -259,8 +259,15 @@ It disables the known older `cpu-power-limits@ac.service`,
 removes their template/resume helper. It does not modify `power-state.service`,
 AC/battery targets or other projects' udev rules.
 
-The linux setup integration installs a pinned revision of this repository. For
-an existing setup completion marker, reset and run the module to migrate:
+The linux setup integration clones the latest default branch of this repository
+on each actual module run. It owns a separate configuration at
+`configs/cpu-power-limits/cpu-power-limits.conf` in the linux project, validates it
+and hardware access, then copies it to `/etc/cpu-power-limits.conf` **without a
+backup** before running this installer. This replacement is specific to the linux
+module; the standalone installer itself preserves existing configuration.
+
+Completed modules are still skipped by the setup framework. To update the program
+or apply changes from the linux project's configuration, reset and run the module:
 
 ```bash
 ./setup.sh --reset cpu-power-limits
