@@ -164,15 +164,15 @@ class LimitsTests(Fixture):
         self.assertEqual(writes, [self.limits.files[1], self.limits.files[0],
                                   self.limits.files[0], self.limits.files[1]])
 
-    def test_check_queries_without_changing_hardware(self):
+    def test_status_queries_without_changing_hardware(self):
         before = self.snapshot()
         mailbox = FakeMailbox()
-        code, out, _ = self.run_cli("--check", mailbox=mailbox)
+        code, out, _ = self.run_cli("--status", mailbox=mailbox)
         self.assertEqual(code, 0)
         self.assertIn("PL1=45 W PL2=90 W", out)
         self.assertEqual(before, self.snapshot())
         self.assertEqual(mailbox.writes, [])
-        self.assertEqual(self.run_cli("--check", "--profile", "auto", mailbox=mailbox)[0], 1)
+        self.assertEqual(self.run_cli("--status", "--profile", "auto", mailbox=mailbox)[0], 1)
 
     def test_usb_pd_and_device_scope(self):
         (self.supply / "online").write_text("0")
@@ -195,11 +195,11 @@ class LimitsTests(Fixture):
         with self.assertRaises(cpl.Error):
             cpl.detect_profile(self.supply.parent)
 
-    def test_check_serializes_with_hardware_lock(self):
+    def test_status_serializes_with_hardware_lock(self):
         with open(self.env["CPU_POWER_LIMITS_LOCK_FILE"], "a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             proc = subprocess.Popen([sys.executable, str(REPO / "cpu_power_limits.py"),
-                                     "--config", str(self.config), "--check"],
+                                     "--config", str(self.config), "--status"],
                                     env=dict(os.environ, **self.env), stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, text=True)
             try:
@@ -214,10 +214,10 @@ class LimitsTests(Fixture):
                     proc.kill()
                     proc.communicate()
 
-    def test_real_cli_errors_and_complete_check_output(self):
+    def test_real_cli_errors_and_complete_status_output(self):
         self.config.write_text(CONFIG + "CORE_OFFSET=150\n")
         result = subprocess.run([sys.executable, str(REPO / "cpu_power_limits.py"),
-                                 "--config", str(self.config), "--check"],
+                                 "--config", str(self.config), "--status"],
                                 env=dict(os.environ, **self.env), capture_output=True, text=True)
         self.assertEqual(result.returncode, 1)
         for key in cpl.DOMAINS:
@@ -265,7 +265,7 @@ class OffsetTests(Fixture):
         mailbox = FakeMailbox()
         self.assertEqual(self.run_cli(mailbox=mailbox)[0], 0)
         self.assertEqual(set(d for d, _ in mailbox.writes), {0, 1, 2, 3})
-        code, out, _ = self.run_cli("--check", "--profile", "auto", mailbox=mailbox)
+        code, out, _ = self.run_cli("--status", "--profile", "auto", mailbox=mailbox)
         self.assertEqual(code, 0)
         self.assertIn("normalized=-80 mV expected=-80.07812 mV", out)
         self.assertNotIn("MISMATCH", out)
@@ -275,14 +275,14 @@ class OffsetTests(Fixture):
         mailbox = FakeMailbox()
         mailbox.read_fail.add(1)
         before = self.snapshot()
-        code, out, _ = self.run_cli("--check", "--profile", "auto", mailbox=mailbox)
+        code, out, _ = self.run_cli("--status", "--profile", "auto", mailbox=mailbox)
         self.assertEqual(code, 1)
         for key in cpl.DOMAINS:
             self.assertIn(key, out)
         self.assertIn("firmware unavailable", out)
         self.assertIn("MISMATCH", out)
         self.assertEqual(before, self.snapshot())
-        code, out, _ = self.run_cli("--check")
+        code, out, _ = self.run_cli("--status")
         self.assertEqual(code, 1)
         self.assertIn("simulated missing MSR", out)
 

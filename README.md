@@ -159,7 +159,7 @@ Validate without hardware access, then reapply:
 ```bash
 cpu-power-limits --config /etc/cpu-power-limits.conf --validate
 sudo systemctl restart cpu-power-limits.service
-sudo cpu-power-limits --check --profile auto
+sudo cpu-power-limits --status --profile auto
 ```
 
 Readback confirms the reported offset, not physical supply voltage or stability.
@@ -172,10 +172,10 @@ crashes or data loss.
 ## Checking current values
 
 ```bash
-sudo cpu-power-limits --check
-sudo cpu-power-limits --check --profile auto
-sudo cpu-power-limits --check --profile ac
-sudo cpu-power-limits --check --profile battery
+sudo cpu-power-limits --status
+sudo cpu-power-limits --status --profile auto
+sudo cpu-power-limits --status --profile ac
+sudo cpu-power-limits --status --profile battery
 ```
 
 Without `--profile`, check reports live PL1/PL2 without comparing them to a power
@@ -204,7 +204,7 @@ MSR `0x150` before reading its response. Check does not load the MSR module.
 
 Exit codes: 0 for success, 1 for configuration/hardware/verification errors, 2 for
 invalid CLI arguments, 130 for interruption. `--help` lists options. Omitting
-`--check`, `--validate` and `--preflight` applies settings (automatic profile by
+`--status`, `--validate` and `--preflight` applies settings (automatic profile by
 default). `--preflight` validates hardware access without applying targets.
 
 ## systemd status and triggers
@@ -212,13 +212,13 @@ default). `--preflight` validates hardware access without applying targets.
 ```bash
 systemctl status cpu-power-limits.service
 journalctl -u cpu-power-limits.service -b
-sudo cpu-power-limits --check --profile auto
+sudo cpu-power-limits --status --profile auto
 ```
 
 The service is `oneshot` with `RemainAfterExit=yes`: `active (exited)` is normal.
 The systemd `Status` field contains the **last successful application** timestamp
 in UTC, profile, PL1/PL2 and read-back offsets. Detailed comparisons are recorded
-in the journal. The status is a snapshot, not a live monitor; use `--check` for
+in the journal. The status is a snapshot, not a live monitor; use `--status` for
 current hardware values. Status publication failure is logged as a warning.
 
 Power-supply `change` events request a non-blocking restart. A source of type
@@ -246,7 +246,7 @@ Omitted domains never receive voltage-setting commands, even during recovery.
 
 Rollback is best effort, not a hardware transaction. Firmware rejection, hardware
 failure, abrupt power loss or an uncatchable kill can leave partial settings.
-Inspect values with `--check` after errors. A readable mailbox that ignores writes
+Inspect values with `--status` after errors. A readable mailbox that ignores writes
 is detected by a mismatch; blocked mailbox commands report their response status
 or timeout. These errors do not cause firmware protections to be bypassed.
 
@@ -275,30 +275,32 @@ the service and verify. A reboot may restore firmware defaults but is not a
 replacement for verifying them.
 
 ```bash
-sudo systemctl disable --now cpu-power-limits.service
-sudo rm -f /etc/systemd/system/cpu-power-limits.service
-sudo rm -f /etc/udev/rules.d/91-cpu-power-limits.rules
-sudo rm -f /usr/lib/systemd/system-sleep/cpu-power-limits
-sudo rm -f /usr/local/bin/cpu-power-limits /usr/local/libexec/cpu-power-limits
-sudo systemctl daemon-reload
-sudo udevadm control --reload-rules
+sudo ./uninstall.sh
 ```
 
-The configuration is retained; remove `/etc/cpu-power-limits.conf` separately if
-no longer needed. If this installer masked thermald and you wish to restore it:
+The idempotent uninstaller stops and disables the service, removes the installed
+files, and reloads systemd and udev. It preserves `/etc/cpu-power-limits.conf` and
+thermald's current state by default. Optional flags can be combined:
 
 ```bash
-sudo systemctl unmask thermald.service dbus-org.freedesktop.thermald.service
-sudo systemctl enable --now thermald.service
+sudo ./uninstall.sh --purge-config        # Also remove the configuration.
+sudo ./uninstall.sh --restore-thermald    # Unmask, enable and start thermald.
 ```
+
+Restoring thermald is an explicit choice; its prior state is not recorded.
+thermald may adjust hardware limits after it starts. Offline removal is available
+with `./uninstall.sh --root /tmp/cpu-power-limits-stage`, optionally with
+`--purge-config`. Offline removal never controls services. The source checkout
+is retained so it can be used to reinstall later.
 
 ## Development and tests
 
 ```bash
 python3 -m unittest discover -s tests -v
 bash -n install.sh
+bash -n uninstall.sh
 bash -n cpu-power-limits-sleep
-shellcheck install.sh cpu-power-limits-sleep
+shellcheck install.sh uninstall.sh cpu-power-limits-sleep
 ```
 
 Tests use synthetic powercap, power-supply and mailbox fixtures, mocked service

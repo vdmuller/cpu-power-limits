@@ -121,7 +121,7 @@ main() {
     systemctl enable cpu-power-limits.service
     systemctl restart cpu-power-limits.service
     systemctl is-active --quiet cpu-power-limits.service
-    /usr/local/libexec/cpu-power-limits --check --profile auto
+    /usr/local/libexec/cpu-power-limits --status --profile auto
     printf '%s\n' 'Installed and verified cpu-power-limits.service.'
 }
 

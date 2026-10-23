@@ -274,7 +274,7 @@ def main(argv=None):
     parser.add_argument("--config", default="/etc/cpu-power-limits.conf")
     parser.add_argument("--profile", choices=("auto", "ac", "battery"))
     modes = parser.add_mutually_exclusive_group()
-    modes.add_argument("--check", action="store_true", help="Query current values without setting limits or offsets")
+    modes.add_argument("--status", action="store_true", help="Query current values without setting limits or offsets")
     modes.add_argument("--validate", action="store_true", help="Validate configuration only; no hardware access")
     modes.add_argument("--preflight", action="store_true", help="Validate configuration and hardware before installation")
     args = parser.parse_args(argv)
@@ -288,17 +288,17 @@ def main(argv=None):
     msr = os.environ.get("CPU_POWER_LIMITS_MSR_DEVICE", "/dev/cpu/0/msr")
     configured = {domain: encode_offset(settings[key]) for key, domain in DOMAINS.items() if key in settings}
     with hardware_lock(lock):
-        profile = args.profile or (None if args.check else "auto")
+        profile = args.profile or (None if args.status else "auto")
         if profile == "auto":
             profile = detect_profile(supply)
         limits = Limits(root)
         previous = limits.read()
-        if not args.check:
+        if not args.status:
             limits.writable()
         mailbox = None
         try:
             # Only application/preflight with configured undervolt loads the driver.
-            if configured and not args.check and not Path(msr).exists() and msr == "/dev/cpu/0/msr":
+            if configured and not args.status and not Path(msr).exists() and msr == "/dev/cpu/0/msr":
                 subprocess.run(["modprobe", "msr"], check=True, timeout=10)
             try:
                 mailbox = Mailbox(msr)
@@ -311,14 +311,14 @@ def main(argv=None):
                         raise Error(f"{NAMES[domain]} unavailable: {errors.get(domain)}")
                 print("cpu-power-limits: preflight passed (write acceptance is verified during application)")
                 return 0
-            if not args.check:
+            if not args.status:
                 prefix = "BATTERY" if profile == "battery" else "AC"
                 target = tuple(settings[f"{prefix}_PL{i}"] for i in (1, 2))
                 before, apply_errors = apply_settings(limits, mailbox, target, configured, previous, before)
                 errors.update(apply_errors)
             lines, failed = report(settings, limits.read(), before, errors, profile)
             print("\n".join(lines), flush=True)
-            if not args.check and not failed:
+            if not args.status and not failed:
                 timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
                 summary = f"Last applied {timestamp}; {lines[0]}; " + "; ".join(
                     f"{key}={decode_offset(before[domain]):+.2f} mV" if domain in before else f"{key}=unavailable"
