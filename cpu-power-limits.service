@@ -1,0 +1,16 @@
+[Unit]
+Description=Intel CPU MMIO power limits and optional undervolt offsets
+After=systemd-suspend.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/libexec/cpu-power-limits --profile auto --config /etc/cpu-power-limits.conf
+RemainAfterExit=yes
+NotifyAccess=all
+TimeoutStartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

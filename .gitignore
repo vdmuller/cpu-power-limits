@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.coverage
+htmlcov/
+.venv/
+.pytest_cache/
+*.log
+stability-results/
