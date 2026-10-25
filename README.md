@@ -6,7 +6,7 @@ applies settings at boot, on power-source changes and after suspend.
 
 Power limits use the kernel's **Intel RAPL MMIO** interface. Voltage offsets use
 the Intel OC mailbox at MSR `0x150`. The program verifies every change by reading
-it back and attempts to restore touched settings if an application fails.
+it back. Failed or interrupted applications leave already applied settings in place.
 
 ## Requirements and compatibility
 
@@ -137,7 +137,7 @@ BATTERY_PL2=45
 Offsets apply in both AC and battery operation. Decimal values are accepted,
 including an optional sign. Every request is normalized to **`-abs(value)`** before
 quantization: `150`, `+150` and `-150` all request **−150 mV**. This program never
-sets a positive voltage offset, including during rollback.
+sets a positive voltage offset.
 
 An explicit **`0` resets that domain to zero offset**. Removing or commenting out
 a key leaves the hardware's current value in place; it does not reset a previously
@@ -238,14 +238,12 @@ after verification remain until the next trigger or manual restart.
 
 Configuration and readable configured offsets are checked before target writes.
 PL2 is raised before PL1 when needed; PL1 is lowered first when reducing limits.
-Matching limits and offsets are not rewritten. Touched power limits and managed
-offsets are restored on a caught application error or interruption, with readback.
-The program reports every rollback failure. An earlier positive offset cannot be
-restored because positive offset writes are prohibited; this is explicitly logged.
-Omitted domains never receive voltage-setting commands, even during recovery.
+Matching limits and offsets are not rewritten. If application fails or is
+interrupted, the program reports the error and does not roll back power limits
+or voltage offsets. Settings already written remain in place, including writes
+that fail verification. Omitted domains never receive voltage-setting commands.
 
-Rollback is best effort, not a hardware transaction. Firmware rejection, hardware
-failure, abrupt power loss or an uncatchable kill can leave partial settings.
+Application is not a hardware transaction; failures can leave partial settings.
 Inspect values with `--status` after errors. A readable mailbox that ignores writes
 is detected by a mismatch; blocked mailbox commands report their response status
 or timeout. These errors do not cause firmware protections to be bypassed.

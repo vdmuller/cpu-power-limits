@@ -37,7 +37,7 @@ class FakeMailbox:
         return self.values[domain]
 
     def write(self, domain, bits):
-        # Call the real guard even when exercising rollback with a fake device.
+        # Call the real guard even when exercising failures with a fake device.
         if cpl.decode_offset(bits) > 0 or domain not in cpl.DOMAINS.values():
             raise cpl.Error("Refusing positive offset or unmanaged domain")
         self.writes.append((domain, bits))
@@ -301,17 +301,16 @@ class OffsetTests(Fixture):
         self.assertEqual(mailbox.writes, [])
         self.assertEqual(before, self.snapshot())
 
-    def test_partial_failure_rolls_back_all_touched_values(self):
+    def test_partial_offset_failure_preserves_applied_settings(self):
         self.config.write_text(CONFIG + "CORE_OFFSET=150\nCACHE_OFFSET=150\n")
         mailbox = FakeMailbox({0: cpl.encode_offset("20"), 2: cpl.encode_offset("30")})
         mailbox.fail = 2
-        before = self.snapshot()
-        initial = dict(mailbox.values)
         with self.assertRaisesRegex(cpl.Error, "injected"):
             self.run_cli(mailbox=mailbox)
-        self.assertEqual(before, self.snapshot())
-        self.assertEqual(mailbox.values, initial)
-        self.assertEqual([d for d, _ in mailbox.writes], [0, 2, 2, 0])
+        self.assertEqual(self.limits.read(), (80000000, 110000000))
+        self.assertEqual(mailbox.values[0], cpl.encode_offset("150"))
+        self.assertEqual(mailbox.values[2], cpl.encode_offset("150"))
+        self.assertEqual([d for d, _ in mailbox.writes], [0, 2])
 
     def test_final_readback_detects_unmanaged_domain_change(self):
         mailbox = FakeMailbox()
@@ -324,10 +323,10 @@ class OffsetTests(Fixture):
         with self.assertRaisesRegex(cpl.Error, "Unmanaged offset changed"):
             self.run_cli(mailbox=mailbox)
         self.assertTrue(all(domain == 0 for domain, _ in mailbox.writes))
-        self.assertEqual(mailbox.values[0], 0)
-        self.assertEqual(self.limits.read(), (45000000, 90000000))
+        self.assertEqual(mailbox.values[0], cpl.encode_offset("150"))
+        self.assertEqual(self.limits.read(), (80000000, 110000000))
 
-    def test_interruption_restores_touched_settings(self):
+    def test_offset_interruption_preserves_applied_settings(self):
         mailbox = FakeMailbox()
         original = mailbox.write
         interrupted = False
@@ -341,29 +340,21 @@ class OffsetTests(Fixture):
         self.config.write_text(CONFIG + "CORE_OFFSET=150\n")
         with self.assertRaises(KeyboardInterrupt):
             self.run_cli(mailbox=mailbox)
-        self.assertEqual(mailbox.values[0], 0)
-        self.assertEqual(self.limits.read(), (45000000, 90000000))
+        self.assertEqual(mailbox.values[0], cpl.encode_offset("150"))
+        self.assertEqual(len(mailbox.writes), 1)
+        self.assertEqual(self.limits.read(), (80000000, 110000000))
 
-    def test_rollback_refuses_previous_positive_offset(self):
+    def test_failure_does_not_restore_previous_positive_offset(self):
         self.config.write_text(CONFIG + "CORE_OFFSET=150\nCACHE_OFFSET=150\n")
         mailbox = FakeMailbox({0: 10})  # Synthetic positive pre-existing offset.
         mailbox.fail = 2
-        errors = io.StringIO()
-        with redirect_stderr(errors):
-            with self.assertRaises(cpl.Error):
-                self.run_cli(mailbox=mailbox)
-        self.assertTrue(all(cpl.decode_offset(bits) <= 0 for _, bits in mailbox.writes))
-        self.assertEqual(self.limits.read(), (45000000, 90000000))
-        # run_cli captures the diagnostic; inspect it with the transaction directly.
-        mailbox = FakeMailbox({0: 10})
-        mailbox.fail = 0
-        with redirect_stderr(errors), self.assertRaises(cpl.Error):
-            cpl.apply_settings(self.limits, mailbox, (80000000, 110000000),
-                               {0: cpl.encode_offset("150")}, self.limits.read(), dict(mailbox.values))
-        self.assertIn("Rollback failed for Core", errors.getvalue())
+        with self.assertRaisesRegex(cpl.Error, "injected"):
+            self.run_cli(mailbox=mailbox)
+        self.assertEqual(mailbox.writes, [(0, cpl.encode_offset("150")),
+                                          (2, cpl.encode_offset("150"))])
+        self.assertEqual(self.limits.read(), (80000000, 110000000))
 
-    def test_mmio_mismatch_attempts_restore(self):
-        previous = self.limits.read()
+    def test_mmio_mismatch_does_not_restore(self):
         original = self.limits.write
         calls = []
         def write(target):
@@ -373,9 +364,9 @@ class OffsetTests(Fixture):
                 raise cpl.Error("MMIO write/readback mismatch")
         with patch.object(self.limits, "write", side_effect=write), redirect_stderr(io.StringIO()):
             with self.assertRaises(cpl.Error):
-                cpl.apply_settings(self.limits, None, (80000000, 110000000), {}, previous, {})
-        self.assertEqual(self.limits.read(), previous)
-        self.assertEqual(len(calls), 2)
+                cpl.apply_settings(self.limits, None, (80000000, 110000000), {}, {})
+        self.assertEqual(self.limits.read(), (80000000, 110000000))
+        self.assertEqual(calls, [(80000000, 110000000)])
 
 
 class MailboxTests(unittest.TestCase):

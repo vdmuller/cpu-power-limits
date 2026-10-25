@@ -176,43 +176,25 @@ def offsets_snapshot(mailbox):
     return values, errors
 
 
-def apply_settings(limits, mailbox, target, offsets, previous, before):
-    touched = []
-    power_touched = False
-    try:
-        # All configured domains must have been read before the first mutation.
-        for domain in offsets:
-            if domain not in before:
-                raise Error(f"Cannot read configured domain: {NAMES[domain]}")
-        power_touched = True
-        limits.write(target)
-        for domain, bits in offsets.items():
-            if before[domain] != bits:
-                touched.append(domain)  # Include commands that may fail after writing.
-                mailbox.write(domain, bits)
-        after, errors = offsets_snapshot(mailbox) if mailbox else ({}, {})
-        for domain, bits in offsets.items():
-            if after.get(domain) != bits:
-                raise Error(f"Final offset verification failed: {NAMES[domain]}: {errors.get(domain, 'mismatch')}")
-        for domain in before.keys() - offsets.keys():
-            if after.get(domain) != before[domain]:
-                raise Error(f"Unmanaged offset changed: {NAMES[domain]}")
-        if limits.read() != tuple(target):
-            raise Error("Final MMIO verification failed")
-        return after, errors
-    except BaseException:
-        print("cpu-power-limits: application failed; attempting rollback", file=sys.stderr)
-        for domain in reversed(touched):
-            try:
-                mailbox.write(domain, before[domain])
-            except (Error, OSError) as error:
-                print(f"Rollback failed for {NAMES[domain]}: {error}", file=sys.stderr)
-        if power_touched:
-            try:
-                limits.write(previous)
-            except (Error, OSError) as error:
-                print(f"MMIO rollback failed: {error}", file=sys.stderr)
-        raise
+def apply_settings(limits, mailbox, target, offsets, before):
+    # All configured domains must have been read before the first mutation.
+    for domain in offsets:
+        if domain not in before:
+            raise Error(f"Cannot read configured domain: {NAMES[domain]}")
+    limits.write(target)
+    for domain, bits in offsets.items():
+        if before[domain] != bits:
+            mailbox.write(domain, bits)
+    after, errors = offsets_snapshot(mailbox) if mailbox else ({}, {})
+    for domain, bits in offsets.items():
+        if after.get(domain) != bits:
+            raise Error(f"Final offset verification failed: {NAMES[domain]}: {errors.get(domain, 'mismatch')}")
+    for domain in before.keys() - offsets.keys():
+        if after.get(domain) != before[domain]:
+            raise Error(f"Unmanaged offset changed: {NAMES[domain]}")
+    if limits.read() != tuple(target):
+        raise Error("Final MMIO verification failed")
+    return after, errors
 
 
 @contextmanager
@@ -292,7 +274,7 @@ def main(argv=None):
         if profile == "auto":
             profile = detect_profile(supply)
         limits = Limits(root)
-        previous = limits.read()
+        limits.read()
         if not args.status:
             limits.writable()
         mailbox = None
@@ -314,7 +296,7 @@ def main(argv=None):
             if not args.status:
                 prefix = "BATTERY" if profile == "battery" else "AC"
                 target = tuple(settings[f"{prefix}_PL{i}"] for i in (1, 2))
-                before, apply_errors = apply_settings(limits, mailbox, target, configured, previous, before)
+                before, apply_errors = apply_settings(limits, mailbox, target, configured, before)
                 errors.update(apply_errors)
             lines, failed = report(settings, limits.read(), before, errors, profile)
             print("\n".join(lines), flush=True)
