@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=CPU Power Limits
+Comment=Inspect and configure CPU power limits and undervolting
+Exec=/usr/local/bin/cpu-power-limits-indicator
+Icon=cpu-power-limits
+Terminal=false
+Categories=Settings;HardwareSettings;
+StartupNotify=true

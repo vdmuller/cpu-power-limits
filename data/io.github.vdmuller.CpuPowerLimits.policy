@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>cpu-power-limits</vendor>
+  <vendor_url>https://github.com/vdmuller/cpu-power-limits</vendor_url>
+  <action id="io.github.vdmuller.CpuPowerLimits.read">
+    <description>Read CPU power limits and voltage offsets</description>
+    <message>Authentication is required to read CPU settings</message>
+    <defaults><allow_any>no</allow_any><allow_inactive>no</allow_inactive><allow_active>yes</allow_active></defaults>
+  </action>
+  <action id="io.github.vdmuller.CpuPowerLimits.change">
+    <description>Change CPU power limits and voltage offsets</description>
+    <message>Authentication is required to apply CPU settings</message>
+    <defaults><allow_any>no</allow_any><allow_inactive>no</allow_inactive><allow_active>auth_admin_keep</allow_active></defaults>
+  </action>
+</policyconfig>

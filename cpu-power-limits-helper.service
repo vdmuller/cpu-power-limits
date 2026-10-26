@@ -1,0 +1,16 @@
+[Unit]
+Description=CPU Power Limits desktop control helper
+
+[Service]
+Type=dbus
+BusName=io.github.vdmuller.CpuPowerLimits
+ExecStart=/usr/local/libexec/cpu-power-limits-helper
+User=root
+RuntimeDirectory=cpu-power-limits
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX
+UMask=0022

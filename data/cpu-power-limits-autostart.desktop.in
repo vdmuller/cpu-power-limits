@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=CPU Power Limits
+Comment=Show the CPU Power Limits status indicator
+Exec=/usr/local/bin/cpu-power-limits-indicator --autostart
+Icon=cpu-power-limits
+Terminal=false
+X-GNOME-Autostart-enabled=true

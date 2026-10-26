@@ -60,10 +60,43 @@ migrate_legacy_units() {
 }
 
 install_files() {
-    local root=$1
+    local root=$1 source language
     install -Dm755 "$SOURCE_DIR/cpu_power_limits.py" "$root/usr/local/libexec/cpu-power-limits"
+    for source in cpu_power_limits.py cpu_power_limits_control.py cpu_power_limits_view.py cpu_power_limits_helper.py; do
+        install -Dm644 "$SOURCE_DIR/$source" "$root/usr/local/libexec/$source"
+    done
+    install -Dm755 "$SOURCE_DIR/cpu_power_limits_gui.py" "$root/usr/local/libexec/cpu-power-limits-gui"
+    install -Dm755 "$SOURCE_DIR/cpu_power_limits_helper.py" "$root/usr/local/libexec/cpu-power-limits-helper"
     install -d -m755 "$root/usr/local/bin"
     ln -sfn ../libexec/cpu-power-limits "$root/usr/local/bin/cpu-power-limits"
+    ln -sfn ../libexec/cpu-power-limits-gui "$root/usr/local/bin/cpu-power-limits-indicator"
+    for source in "$SOURCE_DIR"/icons/*.svg; do
+        install -Dm644 "$source" "$root/usr/local/libexec/icons/${source##*/}"
+        install -Dm644 "$source" "$root/usr/local/share/icons/hicolor/scalable/apps/${source##*/}"
+    done
+    install -d -m755 "$root/usr/local/share/applications" "$root/etc/xdg/autostart"
+    if compgen -G "$SOURCE_DIR/po/*.po" >/dev/null; then
+        msgfmt --desktop --template="$SOURCE_DIR/data/cpu-power-limits.desktop.in" \
+            -d "$SOURCE_DIR/po" --output-file="$root/usr/local/share/applications/io.github.vdmuller.CpuPowerLimits.Indicator.desktop"
+        msgfmt --desktop --template="$SOURCE_DIR/data/cpu-power-limits-autostart.desktop.in" \
+            -d "$SOURCE_DIR/po" --output-file="$root/etc/xdg/autostart/cpu-power-limits.desktop"
+    else
+        install -m644 "$SOURCE_DIR/data/cpu-power-limits.desktop.in" "$root/usr/local/share/applications/io.github.vdmuller.CpuPowerLimits.Indicator.desktop"
+        install -m644 "$SOURCE_DIR/data/cpu-power-limits-autostart.desktop.in" "$root/etc/xdg/autostart/cpu-power-limits.desktop"
+    fi
+    chmod 644 "$root/usr/local/share/applications/io.github.vdmuller.CpuPowerLimits.Indicator.desktop" "$root/etc/xdg/autostart/cpu-power-limits.desktop"
+    for source in "$SOURCE_DIR"/po/*.po; do
+        [[ -e "$source" ]] || continue
+        language=${source##*/}; language=${language%.po}
+        [[ "$language" =~ ^[a-zA-Z_@.-]+$ ]] || { printf 'Invalid locale: %s\n' "$language" >&2; return 1; }
+        install -d -m755 "$root/usr/local/share/locale/$language/LC_MESSAGES"
+        msgfmt --check --output-file="$root/usr/local/share/locale/$language/LC_MESSAGES/cpu-power-limits.mo" "$source"
+        chmod 644 "$root/usr/local/share/locale/$language/LC_MESSAGES/cpu-power-limits.mo"
+    done
+    install -Dm644 "$SOURCE_DIR/cpu-power-limits-helper.service" "$root/etc/systemd/system/cpu-power-limits-helper.service"
+    install -Dm644 "$SOURCE_DIR/data/io.github.vdmuller.CpuPowerLimits.conf" "$root/etc/dbus-1/system.d/io.github.vdmuller.CpuPowerLimits.conf"
+    install -Dm644 "$SOURCE_DIR/data/io.github.vdmuller.CpuPowerLimits.service" "$root/usr/share/dbus-1/system-services/io.github.vdmuller.CpuPowerLimits.service"
+    install -Dm644 "$SOURCE_DIR/data/io.github.vdmuller.CpuPowerLimits.policy" "$root/usr/share/polkit-1/actions/io.github.vdmuller.CpuPowerLimits.policy"
     install -Dm755 "$SOURCE_DIR/cpu-power-limits-sleep" "$root/usr/lib/systemd/system-sleep/cpu-power-limits"
     if [[ ! -e "$root/etc/cpu-power-limits.conf" && ! -L "$root/etc/cpu-power-limits.conf" ]]; then
         install -Dm644 "$SOURCE_DIR/cpu-power-limits.conf" "$root/etc/cpu-power-limits.conf"
@@ -75,7 +108,7 @@ install_files() {
 }
 
 main() {
-    local root="" policy=ask command config
+    local root="" policy=ask command config catalog
     while (( $# )); do
         case "$1" in
             --disable-thermald|--keep-thermald)
@@ -89,8 +122,12 @@ main() {
             *) usage >&2; return 1 ;;
         esac
     done
-    for command in python3 install ln; do
+    for command in python3 install ln msgfmt; do
         command -v "$command" >/dev/null || { printf 'Missing dependency: %s\n' "$command" >&2; return 1; }
+    done
+    for catalog in "$SOURCE_DIR"/po/*.po; do
+        [[ -e "$catalog" ]] || continue
+        msgfmt --check --output-file=/dev/null "$catalog"
     done
     if [[ -n "$root" ]]; then
         [[ -d "$root" ]] || { printf '%s\n' '--root must be an existing directory.' >&2; return 1; }
@@ -104,6 +141,15 @@ main() {
         return 0
     fi
     [[ "$EUID" == 0 ]] || { printf '%s\n' 'Run with sudo, or use --root DIR for offline staging.' >&2; return 1; }
+    /usr/bin/python3 - <<'PY'
+try:
+    import gi
+    gi.require_version('Gtk', '3.0')
+    gi.require_version('Dbusmenu', '0.4')
+    from gi.repository import Gtk, Gio, Dbusmenu
+except (ImportError, ValueError) as error:
+    raise SystemExit('Missing desktop dependencies: install PyGObject, GTK 3 and Dbusmenu. ' + str(error))
+PY
     for command in systemctl udevadm flock modprobe; do
         command -v "$command" >/dev/null || { printf 'Missing dependency: %s\n' "$command" >&2; return 1; }
     done
@@ -117,12 +163,16 @@ main() {
     migrate_legacy_units
     install_files ""
     systemctl daemon-reload
+    # D-Bus reloads policy; restarting its daemon would disrupt the desktop.
+    systemctl reload dbus.service
+    systemctl try-restart cpu-power-limits-helper.service
     udevadm control --reload-rules
     systemctl enable cpu-power-limits.service
     systemctl restart cpu-power-limits.service
     systemctl is-active --quiet cpu-power-limits.service
-    /usr/local/libexec/cpu-power-limits --status --profile auto
+    /usr/local/libexec/cpu-power-limits --managed --status --profile auto
     printf '%s\n' 'Installed and verified cpu-power-limits.service.'
+    printf '%s\n' 'Desktop indicator installed. Open CPU Power Limits from the applications menu, or log in again for autostart.'
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

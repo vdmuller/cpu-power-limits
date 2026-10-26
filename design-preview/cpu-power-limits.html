@@ -1,0 +1,219 @@
+<div id="cpl-design">
+  <div class="viz-carousel" aria-label="CPU Power Limits layout alternatives">
+    <section data-variant="Focused tabs" aria-label="Focused tabs design"><div class="cpl-stage" data-layout="tabs"></div></section>
+    <section data-variant="Status + editor" aria-label="Status and editor design" hidden><div class="cpl-stage" data-layout="split"></div></section>
+  </div>
+</div>
+<style>
+#cpl-design { color-scheme: light dark; font: 14px/1.5 Cantarell, Inter, system-ui, sans-serif; color: light-dark(#202124,#f3f3f3); --cpl-bg: light-dark(#fafafa,#242424); --cpl-panel: light-dark(#ffffff,#303030); --cpl-header: light-dark(#ebebeb,#303030); --cpl-line: light-dark(#dedede,#484848); --cpl-dim: light-dark(#626267,#b5b5bc); --cpl-blue: light-dark(#1c65cb,#78aeff); --cpl-good: light-dark(#197444,#78d49c); --cpl-warning: light-dark(#936000,#e9bc65); --cpl-bad: light-dark(#bf2632,#ff919b); }
+#cpl-design * { box-sizing: border-box; }
+#cpl-design .cpl-stage { min-height: 855px; padding: 0 0 18px; }
+#cpl-design .cpl-bar { display: flex; justify-content: space-between; align-items: center; background: light-dark(#202124,#101012); color: #f5f5f5; padding: 8px 16px; border-radius: 12px 12px 0 0; position: relative; }
+#cpl-design button, #cpl-design input { font: inherit; }
+#cpl-design button { border: 1px solid var(--cpl-line); background: var(--cpl-panel); color: inherit; border-radius: 7px; padding: 7px 12px; display: inline-flex; justify-content: center; align-items: center; gap: 7px; font-weight: 500; }
+#cpl-design button:hover { filter: brightness(.96); }
+#cpl-design button:disabled { opacity: .45; }
+#cpl-design button.primary { background: light-dark(#1c65cb,#3979cd); border-color: transparent; color: #fff; }
+#cpl-design .cpl-tray { padding: 5px 10px; border: 0; background: #38383c; color: #f5f5f5; }
+#cpl-design svg { width: 17px; height: 17px; flex-shrink: 0; }
+#cpl-design .cpl-menu { position: absolute; top: 46px; right: 12px; width: min(300px,calc(100% - 24px)); background: var(--cpl-panel); color: light-dark(#202124,#f3f3f3); padding: 15px; border: 1px solid var(--cpl-line); border-radius: 12px; z-index: 5; box-shadow: 0 8px 24px #0003; }
+#cpl-design .cpl-menu button { border: 0; display: flex; width: 100%; justify-content: flex-start; margin-top: 3px; }
+#cpl-design .cpl-menu hr { border: 0; border-top: 1px solid var(--cpl-line); margin: 10px 0; }
+#cpl-design .cpl-shell { background: var(--cpl-bg); border: 1px solid var(--cpl-line); border-top: 0; border-radius: 0 0 12px 12px; overflow: hidden; }
+#cpl-design .cpl-head { padding: 13px 20px; background: var(--cpl-header); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+#cpl-design .cpl-title { font-weight: 650; }
+#cpl-design .cpl-sub { color: var(--cpl-dim); font-size: 12px; }
+#cpl-design .cpl-head .cpl-sub { margin-top: 1px; }
+#cpl-design .cpl-close { border: 0; border-radius: 50%; width: 30px; height: 30px; padding: 0; background: light-dark(#d7d7d7,#474747); }
+#cpl-design .cpl-tabs { display: flex; justify-content: center; gap: 3px; padding: 9px; border-bottom: 1px solid var(--cpl-line); }
+#cpl-design .cpl-tabs button { min-width: 130px; border: 0; background: transparent; }
+#cpl-design .cpl-tabs button[aria-selected="true"] { background: light-dark(#e3e3e6,#444448); }
+#cpl-design .cpl-body { padding: 25px; max-width: 780px; margin: auto; }
+#cpl-design [data-layout="tabs"] .cpl-status { max-width: 420px; margin: 0 auto; }
+#cpl-design [data-layout="split"] .cpl-body { max-width: none; display: grid; grid-template-columns: 1fr 1.1fr; gap: 24px; }
+#cpl-design [data-layout="split"] .cpl-status { border-right: 1px solid var(--cpl-line); padding-right: 24px; }
+#cpl-design .cpl-heading { margin: 0 0 14px; font-size: 16px; font-weight: 650; }
+#cpl-design .cpl-statusline { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 20px; }
+#cpl-design .cpl-statusicon { width: 36px; height: 36px; border-radius: 50%; background: var(--cpl-panel); color: var(--cpl-dim); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+#cpl-design .cpl-statusicon.error { background: color-mix(in srgb,var(--cpl-bad) 12%,transparent); color: var(--cpl-bad); }
+#cpl-design .cpl-statusicon.warning { background: color-mix(in srgb,var(--cpl-warning) 12%,transparent); color: var(--cpl-warning); }
+#cpl-design .cpl-statusicon.neutral { background: color-mix(in srgb,var(--cpl-dim) 12%,transparent); color: var(--cpl-dim); }
+#cpl-design .cpl-summary { font-weight: 650; }
+#cpl-design .cpl-meta { display:flex; flex-wrap:wrap; justify-content:space-between; gap: 8px; margin: 0 0 10px; }
+#cpl-design .cpl-tag { font-size: 12px; border-radius: 5px; background: light-dark(#e9e9eb,#3c3c40); padding: 3px 8px; }
+#cpl-design .cpl-group { border: 1px solid var(--cpl-line); border-radius: 10px; background: var(--cpl-panel); overflow: hidden; margin-bottom: 18px; }
+#cpl-design .cpl-tablehead { color: var(--cpl-dim); font-size: 12px; background: light-dark(#f4f4f5,#353538); }
+#cpl-design .cpl-valuegrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; max-width:390px; margin:0 auto 18px; }
+#cpl-design .cpl-valuecard { min-height:118px; min-width:0; container-type:inline-size; border-radius:16px; background:light-dark(#ffffff,#303033); border:1px solid light-dark(#e7e7e9,#3a3a3e); padding:12px 15px; display:flex; flex-direction:column; justify-content:space-between; gap:5px; }
+#cpl-design .cpl-cardtop { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+#cpl-design .cpl-cardlabel { font-weight:500; }
+#cpl-design .cpl-cardtop svg { color:var(--cpl-dim); width:15px; height:15px; }
+#cpl-design .cpl-current { font-size:clamp(20px,20cqi,36px); font-weight:500; letter-spacing:-1.4px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+#cpl-design .cpl-power .cpl-current { font-size:clamp(30px,26cqi,48px); }
+#cpl-design .cpl-current.verified { color:var(--cpl-good); }
+#cpl-design .cpl-current.warning { color:var(--cpl-warning); }
+#cpl-design .cpl-unit { font-size:14px; font-weight:400; letter-spacing:normal; color:var(--cpl-dim); margin-left:5px; }
+#cpl-design .cpl-current.cpl-unavailable { color:var(--cpl-dim); }
+#cpl-design .cpl-expected { color:light-dark(#252528,#f8f8f9); font-size:12px; margin-top:6px; }
+#cpl-design .cpl-cardfoot { color:var(--cpl-dim); font-size:12px; }
+#cpl-design .cpl-valuecard.issue .cpl-cardfoot { color:light-dark(#252528,#f8f8f9); }
+#cpl-design .cpl-sectionhead { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin: 16px 0 10px; }
+#cpl-design .cpl-sectionhead h3 { margin:0; font-size:16px; font-weight:500; }
+#cpl-design .cpl-sectionhead .cpl-sub { text-align:right; }
+#cpl-design .cpl-mismatch { color: var(--cpl-warning); font-weight: 650; }
+#cpl-design .cpl-note { font-size: 12px; color: var(--cpl-dim); margin: 8px 0 16px; }
+#cpl-design .cpl-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+#cpl-design .cpl-banner { border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; background: color-mix(in srgb,var(--cpl-warning) 11%,var(--cpl-panel)); }
+#cpl-design .cpl-banner.error { background: color-mix(in srgb,var(--cpl-bad) 9%,var(--cpl-panel)); }
+#cpl-design .cpl-banner button { margin-top: 9px; }
+#cpl-design .cpl-banner p { margin: 4px 0 0; font-size: 12px; }
+#cpl-design .cpl-configrow { display:grid; grid-template-columns: minmax(0,1fr) 90px 90px; gap: 10px; padding: 12px 15px; align-items: center; }
+#cpl-design .cpl-configrow + .cpl-configrow { border-top: 1px solid var(--cpl-line); }
+#cpl-design .cpl-configrow.offset { grid-template-columns: minmax(0,1fr) 125px; }
+#cpl-design .cpl-field { display:flex; align-items:center; gap: 6px; justify-content:flex-end; }
+#cpl-design input[type="number"] { width: 68px; min-width: 0; padding: 6px 3px 6px 8px; border: 1px solid var(--cpl-line); border-radius: 6px; background: var(--cpl-bg); color: inherit; text-align: right; font-variant-numeric:tabular-nums; }
+#cpl-design input[type="checkbox"] { accent-color: var(--cpl-blue); width: 16px; height:16px; vertical-align:middle; margin-right:8px; }
+#cpl-design .cpl-validation { color: var(--cpl-bad); font-size: 12px; }
+#cpl-design .cpl-editnote { margin: 14px 0 0; color: var(--cpl-dim); font-size:12px; min-height: 20px; }
+#cpl-design .cpl-split-title { margin-bottom: 19px; }
+#cpl-design .cpl-toast { margin-top: 14px; padding: 10px 12px; background: var(--cpl-header); border-radius: 8px; }
+#cpl-design .cpl-hidden, #cpl-design [hidden] { display: none !important; }
+#cpl-design details { margin: 12px 0; }
+#cpl-design details pre { white-space: pre-wrap; font-size:12px; }
+@media(max-width:420px) { #cpl-design .cpl-valuegrid {gap:10px;} #cpl-design .cpl-valuecard {padding:13px; border-radius:16px;} #cpl-design .cpl-unit {font-size:12px; margin-left:3px;} }
+@media(max-width:720px) { #cpl-design [data-layout="split"] .cpl-body { display:block; } #cpl-design [data-layout="split"] .cpl-status { border-right:0; padding-right:0; border-bottom:1px solid var(--cpl-line); padding-bottom:20px; margin-bottom:24px; } #cpl-design .cpl-body { padding:18px 12px; } #cpl-design .cpl-stage { min-height: 920px; } #cpl-design .cpl-configrow { padding:10px; grid-template-columns:minmax(0,1fr) 83px 83px; gap:5px; } #cpl-design .cpl-reading { padding:10px; gap:6px; } #cpl-design .cpl-head {padding:12px;} }
+</style>
+<script>
+(() => {
+  const root = document.getElementById('cpl-design');
+  const defaults = {ac1:100,ac2:135,bat1:35,bat2:45,core:150,cache:150,igpu:80,uncore:0,coreManaged:true,cacheManaged:true,igpuManaged:true,uncoreManaged:false};
+  const scenarios = ['Verified','Temporary test','Application failed','Values differ','Unavailable','Applying'];
+  const models = [];
+  const savedState = window.openai?.widgetState;
+  const restored = savedState?.privateContent?.layouts;
+  function remember() {
+    window.openai?.setWidgetState?.({modelContent:{preview:'CPU Power Limits design',layouts:models.map(m=>({layout:m.layout,scenario:m.scenario,tab:m.tab}))},privateContent:{layouts:models.map(m=>({scenario:m.scenario,tab:m.tab}))}})?.catch(()=>{});
+  }
+  function icon(name) { return '<i data-lucide="'+name+'" aria-hidden="true"></i>'; }
+  function icons() { if (globalThis.lucide) lucide.createIcons({attrs:{width:17,height:17}}); }
+  function fmt(v, decimals=0) { return Number(v).toLocaleString('en-US',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}); }
+  function mv(v) { return Number(v)===0 ? '0.00 mV' : '−'+fmt(Math.round(Number(v)*1.024)/1.024,2)+' mV'; }
+  function field(key,unit) { return '<span class="cpl-field"><input aria-label="'+({ac1:'AC PL1',ac2:'AC PL2',bat1:'Battery PL1',bat2:'Battery PL2',core:'Core undervolt magnitude',cache:'Cache undervolt magnitude',igpu:'iGPU undervolt magnitude',uncore:'Uncore undervolt magnitude'}[key])+'" data-value="'+key+'" type="number" min="'+(unit==='W'?1:0)+'" '+(unit==='mV'?'max="1000" step="0.1"':'step="1"')+'><span class="cpl-sub">'+unit+'</span></span>'; }
+  root.querySelectorAll('.cpl-stage').forEach((stage,index)=>{
+    const m = {stage,layout:stage.dataset.layout,scenario:scenarios.includes(restored?.[index]?.scenario)?restored[index].scenario:'Verified',tab:restored?.[index]?.tab==='config'?'config':'status',values:{...defaults},effective:{...defaults},persistent:{...defaults},temporary:false,dirty:false,time:'14:32:08',message:''};
+    m.temporary=m.scenario==='Temporary test'; models.push(m);
+    stage.innerHTML = `
+      <div class="cpl-bar"><span class="cpl-sub" style="color:inherit">Activities</span><span>Sun Oct 25 · 14:32</span><button class="cpl-tray" data-action="menu" aria-label="Open CPU Power Limits indicator menu" aria-expanded="false">${icon('cpu')}<span data-tray-icon></span></button><div class="cpl-menu" hidden></div></div>
+      <div class="cpl-shell">
+        <header class="cpl-head"><span>${icon('cpu')}</span><div style="text-align:center"><div class="cpl-title">CPU Power Limits</div><div class="cpl-sub">Power limits &amp; voltage offsets</div></div><button class="cpl-close" data-action="close" aria-label="Close window">${icon('x')}</button></header>
+        ${m.layout==='tabs'?'<nav class="cpl-tabs" aria-label="Application sections"><button data-tab="status" aria-selected="true">Status</button><button data-tab="config" aria-selected="false">Configuration</button></nav>':''}
+        <main class="cpl-body">
+          <section class="cpl-status" aria-label="Hardware status"><h2 class="cpl-heading cpl-split-title" ${m.layout==='tabs'?'hidden':''}>Status</h2><div data-status></div></section>
+          <section class="cpl-config" aria-label="Configuration editor"><h2 class="cpl-heading" ${m.layout==='tabs'?'hidden':''}>Configuration</h2><div data-edit-banner></div>
+            <div class="cpl-meta"><span class="cpl-title">Power limits</span><span class="cpl-sub" data-source>Editing saved configuration</span></div>
+            <div class="cpl-group"><div class="cpl-configrow cpl-tablehead"><span>Power source</span><span style="text-align:right">PL1</span><span style="text-align:right">PL2</span></div><div class="cpl-configrow"><span>AC</span>${field('ac1','W')}${field('ac2','W')}</div><div class="cpl-configrow"><span>Battery</span>${field('bat1','W')}${field('bat2','W')}</div></div>
+            <div class="cpl-sectionhead"><h3>Undervolt</h3><span class="cpl-sub">Voltage offsets · global</span></div>
+            <div class="cpl-group">${[['core','Core'],['cache','Cache'],['igpu','iGPU'],['uncore','Uncore']].map(([key,label])=>'<div class="cpl-configrow offset"><label><input type="checkbox" data-manage="'+key+'">'+label+'</label>'+field(key,'mV')+'</div>').join('')}</div>
+            <p class="cpl-note">Enter undervolt magnitudes; applied offsets are negative.<br>Unchecked domains are preserved. A value of 0 resets a managed offset.</p>
+            <details><summary class="cpl-sub">Expected hardware rounding</summary><div class="cpl-sub" data-rounding></div></details>
+            <div class="cpl-validation" role="alert" data-validation></div><div class="cpl-editnote" aria-live="polite" data-editnote>No unapplied changes</div>
+            <div class="cpl-actions"><button data-action="discard">Discard changes</button><button data-action="test">Test for this boot</button><button class="primary" data-action="save">Save and apply</button></div>
+          </section>
+        </main>
+        <div class="cpl-toast" data-toast role="status" hidden style="margin:0 20px 18px"></div>
+      </div>`;
+    const q=s=>stage.querySelector(s);
+    function setInputs() {
+      stage.querySelectorAll('[data-value]').forEach(el=>{el.value=m.values[el.dataset.value];});
+      stage.querySelectorAll('[data-manage]').forEach(el=>{el.checked=m.values[el.dataset.manage+'Managed'];});
+    }
+    function toast(text) {m.message=text; q('[data-toast]').textContent=text;q('[data-toast]').hidden=!text;}
+    function validate() {
+      const v=m.values;
+      for (const [a,b,label] of [['ac1','ac2','AC'],['bat1','bat2','Battery']]) {
+        if (![v[a],v[b]].every(n=>Number.isSafeInteger(n)&&n>0)) return label+': enter positive whole watts.';
+        if(v[a]>v[b]) return label+': PL1 must not exceed PL2.';
+      }
+      for(const key of ['core','cache','igpu','uncore']) if(v[key+'Managed']&&(!Number.isFinite(v[key])||v[key]<0||v[key]>1000)) return 'Undervolt magnitude must be between 0 and 1000 mV.';
+      return '';
+    }
+    function render() {
+      const fail=m.scenario==='Application failed', mismatch=m.scenario==='Values differ', unavailable=m.scenario==='Unavailable', busy=m.scenario==='Applying';
+      const symbol=fail?'circle-alert':mismatch?'triangle-alert':unavailable?'circle-help':busy?'loader-circle':'circle-check';
+      const title=fail?'Application failed':mismatch?'Values differ from configuration':unavailable?'Hardware status unavailable':busy?'Applying configuration…':'Applied and verified';
+      const temporary=m.temporary;
+      const v=m.effective;
+      const readingGroup=(rows,kind)=>'<div class="cpl-valuegrid '+kind+'">'+rows.map(([label,expected,actual,bad,managed=true,description='Verified'])=>{
+        const missing=unavailable||busy;
+        const value=missing?'—':actual.replace(/ (W|mV)$/, '<span class="cpl-unit">$1</span>');
+        const hasExpected=managed&&!busy&&(bad||unavailable);
+        const stateIcon=busy?'loader-circle':bad||unavailable?'triangle-alert':managed?'check':'minus';
+        const foot=busy?'Applying…':unavailable?'Read unavailable':!managed?'Not managed':bad?(fail?'Application failed':'Value mismatch'):description;
+        return '<article class="cpl-valuecard'+(bad?' issue':'')+'" aria-label="'+label+': '+(missing?'unavailable':actual)+'. '+foot+(hasExpected?'. Expected '+expected:'')+'"><div class="cpl-cardtop"><span class="cpl-cardlabel">'+label+'</span>'+icon(stateIcon)+'</div><div><div class="cpl-current'+(missing?' cpl-unavailable':bad?' warning':managed?' verified':'')+'">'+value+'</div>'+(hasExpected?'<div class="cpl-expected">Expected '+expected+'</div>':'')+'</div><div class="cpl-cardfoot">'+foot+'</div></article>';
+      }).join('')+'</div>';
+      q('[data-tray-icon]').innerHTML=icon(symbol);
+      q('[data-status]').innerHTML=`
+        <div class="cpl-statusline"><span class="cpl-statusicon ${fail?'error':mismatch?'warning':unavailable||busy?'neutral':''}">${icon(symbol)}</span><div><div class="cpl-summary">${title}</div><div class="cpl-sub">${busy?'Waiting for hardware verification':'Last checked today at '+m.time}</div></div></div>
+        ${temporary?'<div class="cpl-banner"><strong>Temporary configuration active</strong><p>Used until restart, including after suspend and power-source changes.</p><button data-action="end">End test and apply saved configuration</button></div>':''}
+        ${fail?'<div class="cpl-banner error" role="alert"><strong>Core undervolt was rejected</strong><p>The latest reading is 0 mV. The requested offset was not applied; power limits were verified.</p></div>':''}
+        ${mismatch?'<div class="cpl-banner"><strong>PL1 differs from the expected value</strong><p>The last application succeeded, but the latest hardware reading differs.</p></div>':''}
+        ${unavailable?'<div class="cpl-banner"><strong>Could not read hardware values</strong><p>The system helper is unavailable. Current values cannot be confirmed.</p></div>':''}
+        <div class="cpl-meta"><span class="cpl-sub">Hardware snapshot</span><span class="cpl-tag">${temporary?'Temporary configuration':'Saved configuration'}</span></div>
+        <div class="cpl-sectionhead"><h3>Power limits</h3><span class="cpl-sub">Package power · AC</span></div>
+        ${readingGroup([['PL1',fmt(v.ac1)+' W',(mismatch?'80':fmt(v.ac1))+' W',mismatch,true,'Sustained power'],['PL2',fmt(v.ac2)+' W',fmt(v.ac2)+' W',false,true,'Short-term power']],'cpl-power')}
+        <div class="cpl-sectionhead"><h3>Undervolt</h3><span class="cpl-sub">Voltage offsets · global</span></div>
+        ${readingGroup(['core','cache','igpu','uncore'].map(key=>[({core:'Core',cache:'Cache',igpu:'iGPU',uncore:'Uncore'})[key],mv(v[key]),fail&&key==='core'?'0.00 mV':mv(v[key]),fail&&key==='core',v[key+'Managed']]),'cpl-undervolt')}
+        <p class="cpl-note">Readings are snapshots. Refresh to check for later hardware changes.</p>
+        ${fail?'<details open><summary>Technical details</summary><pre>OC mailbox rejected domain 0: status 0x1\nApplication incomplete · exit status 1\nLast attempt: today at 14:32:08</pre></details>':''}
+        <div class="cpl-actions"><button data-action="copy">${icon('copy')} Copy diagnostics</button><button data-action="refresh" ${busy?'disabled':''}>${icon('refresh-cw')} Refresh</button><button data-action="reapply" ${busy||unavailable?'disabled':''}>Reapply</button></div>`;
+      q('[data-edit-banner]').innerHTML=temporary?'<div class="cpl-banner"><strong>Editing temporary configuration</strong><p>Test changes for this boot, or save them for future boots.</p><button data-action="end">End test and apply saved configuration</button></div>':'';
+      q('[data-source]').textContent='Editing '+(temporary?'temporary':'saved')+' configuration';
+      q('[data-editnote]').textContent=busy?'Applying configuration…':m.dirty?'Changes not applied':temporary?'Temporary configuration · not saved to disk':'No unapplied changes';
+      q('[data-validation]').textContent=validate();
+      q('[data-rounding]').textContent=['core','cache','igpu','uncore'].filter(k=>m.values[k+'Managed']).map(k=>k[0].toUpperCase()+k.slice(1)+': '+mv(m.values[k])).join(' · ');
+      stage.querySelectorAll('[data-manage]').forEach(el=>{q('[data-value="'+el.dataset.manage+'"]').disabled=!el.checked||busy;el.disabled=busy;});
+      stage.querySelectorAll('[data-value]').forEach(el=>{if(!['core','cache','igpu','uncore'].includes(el.dataset.value))el.disabled=busy;});
+      stage.querySelectorAll('[data-action="test"],[data-action="save"]').forEach(el=>el.disabled=!!validate()||busy||unavailable);
+      q('[data-action="discard"]').disabled=!m.dirty||busy;
+      if(m.layout==='tabs') {
+        q('.cpl-status').hidden=m.tab!=='status';q('.cpl-config').hidden=m.tab!=='config';
+        stage.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===m.tab)));
+      }
+      q('.cpl-menu').innerHTML=`<div class="cpl-title">CPU Power Limits</div><div style="margin-top:5px">${title}</div><div class="cpl-sub">AC · ${fmt(v.ac1)}/${fmt(v.ac2)} W<br>Last checked ${m.time}${temporary?'<br>Temporary configuration active':''}</div><hr><button data-action="open">Open panel</button><button data-action="refresh" ${busy?'disabled':''}>Refresh</button><button data-action="reapply" ${busy||unavailable?'disabled':''}>Reapply</button>${temporary?'<button data-action="end">End test</button>':''}<hr><button data-action="quit">Quit</button>`;
+      stage.querySelectorAll('[data-action="end"]').forEach(el=>el.disabled=busy);
+      icons();
+    }
+    stage.addEventListener('input',event=>{
+      const el=event.target;
+      if(el.dataset.value){m.values[el.dataset.value]=el.value===''?NaN:Number(el.value);m.dirty=true;render();}
+      if(el.dataset.manage){m.values[el.dataset.manage+'Managed']=el.checked;m.dirty=true;render();}
+    });
+    stage.addEventListener('click',event=>{
+      const button=event.target.closest('button');if(!button||button.disabled)return;
+      if(button.dataset.tab){m.tab=button.dataset.tab;render();remember();return;}
+      const action=button.dataset.action;
+      if(action==='menu'){q('.cpl-menu').hidden=!q('.cpl-menu').hidden;button.setAttribute('aria-expanded',String(!q('.cpl-menu').hidden));return;}
+      q('.cpl-menu').hidden=true;q('[data-action="menu"]').setAttribute('aria-expanded','false');
+      if(action==='close'||action==='quit'){toast(action==='close'?'Preview: closing the window keeps the indicator running.':'Preview: Quit closes the interface; the system service keeps running.');return;}
+      if(action==='open'){m.tab='status';render();remember();return;}
+      if(action==='copy'){toast('Preview: diagnostics include the profile, configuration, readings and errors.');return;}
+      if(action==='discard'){m.values={...m.effective};m.dirty=false;setInputs();render();return;}
+      if(action==='refresh'){m.time=new Date().toLocaleTimeString('en-GB');render();toast('Preview refreshed. No hardware was accessed.');return;}
+      if(['test','save','end','reapply'].includes(action)){
+        if(['save','test'].includes(action)&&validate())return;
+        if(action==='test'){m.effective={...m.values};m.temporary=true;}
+        if(action==='save'){m.persistent={...m.values};m.effective={...m.values};m.temporary=false;}
+        if(action==='end'){m.effective={...m.persistent};m.values={...m.persistent};m.temporary=false;}
+        m.dirty=false;m.scenario='Applying';setInputs();render();toast('Preview: system authentication is required for this action.');
+        setTimeout(()=>{m.scenario=m.temporary?'Temporary test':'Verified';m.time=new Date().toLocaleTimeString('en-GB');render();toast(action==='save'?'Configuration saved and applied — simulated.':action==='test'?'Temporary configuration applied — simulated.':action==='end'?'Saved configuration restored — simulated.':'Configuration reapplied — simulated.');remember();},850);
+      }
+    });
+    m.render=render;m.setInputs=setInputs;setInputs();render();
+    if(globalThis.Tweak){const tweak=new Tweak({container:stage,onChange:()=>{m.temporary=m.scenario==='Temporary test';m.message='';toast('');render();remember();}});tweak.addSelect(m,'scenario',{label:'Preview state',options:scenarios});}
+  });
+  window.addEventListener('openai:set_globals',event=>{
+    const states=event.detail?.globals?.widgetState?.privateContent?.layouts;if(!Array.isArray(states))return;
+    models.forEach((m,i)=>{if(scenarios.includes(states[i]?.scenario))m.scenario=states[i].scenario;if(['status','config'].includes(states[i]?.tab))m.tab=states[i].tab;m.temporary=m.scenario==='Temporary test';m.render();});
+  });
+})();
+</script>

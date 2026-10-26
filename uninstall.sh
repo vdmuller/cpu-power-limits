@@ -6,7 +6,7 @@ usage() {
 Usage: sudo ./uninstall.sh [--purge-config] [--restore-thermald]
        ./uninstall.sh --root DIR [--purge-config]
 
-Remove this project's service, executable, udev rule and suspend hook.
+Remove this project's service, desktop application, helper and integration files.
 Configuration and thermald state are preserved unless explicitly requested.
 Current hardware limits and offsets are not reset.
 --root removes staged files offline without accessing hardware or services.
@@ -14,12 +14,35 @@ EOF
 }
 
 remove_files() {
-    local root=$1 purge=$2
+    local root=$1 purge=$2 name
     rm -f -- "$root/etc/systemd/system/cpu-power-limits.service" \
         "$root/etc/udev/rules.d/91-cpu-power-limits.rules" \
         "$root/usr/lib/systemd/system-sleep/cpu-power-limits" \
         "$root/usr/local/bin/cpu-power-limits" \
         "$root/usr/local/libexec/cpu-power-limits"
+    rm -f -- "$root/usr/local/bin/cpu-power-limits-indicator" \
+        "$root/usr/local/libexec/cpu-power-limits-gui" \
+        "$root/usr/local/libexec/cpu-power-limits-helper" \
+        "$root/usr/local/libexec/cpu_power_limits.py" \
+        "$root/usr/local/libexec/cpu_power_limits_control.py" \
+        "$root/usr/local/libexec/cpu_power_limits_view.py" \
+        "$root/usr/local/libexec/cpu_power_limits_helper.py" \
+        "$root/etc/systemd/system/cpu-power-limits-helper.service" \
+        "$root/etc/dbus-1/system.d/io.github.vdmuller.CpuPowerLimits.conf" \
+        "$root/usr/share/dbus-1/system-services/io.github.vdmuller.CpuPowerLimits.service" \
+        "$root/usr/share/polkit-1/actions/io.github.vdmuller.CpuPowerLimits.policy" \
+        "$root/usr/local/share/applications/io.github.vdmuller.CpuPowerLimits.Indicator.desktop" \
+        "$root/etc/xdg/autostart/cpu-power-limits.desktop" \
+        "$root/usr/local/share/locale/"*/LC_MESSAGES/cpu-power-limits.mo \
+        "$root/run/cpu-power-limits/status.json" "$root/run/cpu-power-limits/temporary.json"
+    for name in cpu-power-limits cpu-power-limits-ok cpu-power-limits-warning cpu-power-limits-error cpu-power-limits-unknown cpu-power-limits-applying; do
+        rm -f -- "$root/usr/local/libexec/icons/$name.svg" \
+            "$root/usr/local/share/icons/hicolor/scalable/apps/$name.svg"
+    done
+    for name in cpu_power_limits cpu_power_limits_control cpu_power_limits_view cpu_power_limits_helper; do
+        rm -f -- "$root/usr/local/libexec/__pycache__/$name".cpython-*.pyc
+    done
+    rmdir -- "$root/run/cpu-power-limits" 2>/dev/null || true
     if [[ "$purge" == true ]]; then
         rm -f -- "$root/etc/cpu-power-limits.conf"
     fi
@@ -32,13 +55,33 @@ uninstall_live() {
     if [[ "$state" != not-found ]]; then
         systemctl disable --now cpu-power-limits.service
     fi
+    stop_indicators
+    state=$(systemctl show --property=LoadState --value cpu-power-limits-helper.service)
+    if [[ "$state" != not-found ]]; then
+        systemctl stop cpu-power-limits-helper.service
+    fi
     remove_files "" "$purge"
     systemctl daemon-reload
+    systemctl reload dbus.service
     udevadm control --reload-rules
     if [[ "$restore" == true ]]; then
         systemctl unmask thermald.service dbus-org.freedesktop.thermald.service
         systemctl enable --now thermald.service
     fi
+}
+
+stop_indicators() {
+    local runtime uid username
+    # Address only this application's exported quit action, in each login bus.
+    for runtime in /run/user/[0-9]*; do
+        [[ -S "$runtime/bus" ]] || continue
+        uid=${runtime##*/}
+        username=$(getent passwd "$uid" | cut -d: -f1)
+        [[ -n "$username" ]] || continue
+        runuser -u "$username" -- env XDG_RUNTIME_DIR="$runtime" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime/bus" \
+            /usr/local/bin/cpu-power-limits-indicator --quit || true
+    done
 }
 
 main() {
@@ -65,7 +108,7 @@ main() {
         return 0
     fi
     [[ "$EUID" == 0 ]] || { printf '%s\n' 'Run with sudo, or use --root DIR for offline removal.' >&2; return 1; }
-    for command in systemctl udevadm flock; do
+    for command in systemctl udevadm flock getent cut runuser; do
         command -v "$command" >/dev/null || { printf 'Missing dependency: %s\n' "$command" >&2; return 1; }
     done
     # Serialize with installation; leave lock files in place for existing holders.

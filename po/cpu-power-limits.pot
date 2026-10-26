@@ -1,0 +1,394 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the cpu-power-limits package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: cpu-power-limits 1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-26 13:13-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: cpu_power_limits_gui.py:24
+msgid "Core"
+msgstr ""
+
+#: cpu_power_limits_gui.py:24
+msgid "Cache"
+msgstr ""
+
+#: cpu_power_limits_gui.py:24
+msgid "iGPU"
+msgstr ""
+
+#: cpu_power_limits_gui.py:24
+msgid "Uncore"
+msgstr ""
+
+#: cpu_power_limits_gui.py:93
+#, python-format
+msgid "Could not connect to the system service. %(detail)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:109
+#, python-format
+msgid "The automatic application service failed (%(result)s)."
+msgstr ""
+
+#: cpu_power_limits_gui.py:127
+msgid "Preview only. No hardware was accessed."
+msgstr ""
+
+#: cpu_power_limits_gui.py:130
+msgid "The system service is not connected. Reopen the application to retry."
+msgstr ""
+
+#: cpu_power_limits_gui.py:141 cpu_power_limits_gui.py:167
+msgid "The service returned an unsupported status format."
+msgstr ""
+
+#: cpu_power_limits_gui.py:155
+msgid "Configuration saved; application failed."
+msgstr ""
+
+#: cpu_power_limits_gui.py:155
+msgid "Application failed. See Status for details."
+msgstr ""
+
+#: cpu_power_limits_gui.py:155
+msgid "Configuration saved and applied."
+msgstr ""
+
+#: cpu_power_limits_gui.py:155
+msgid "Temporary configuration applied for this boot."
+msgstr ""
+
+#: cpu_power_limits_gui.py:155
+msgid "Saved configuration restored."
+msgstr ""
+
+#: cpu_power_limits_gui.py:155
+msgid "Configuration applied and verified."
+msgstr ""
+
+#: cpu_power_limits_gui.py:161
+msgid "Authorization was cancelled or denied."
+msgstr ""
+
+#: cpu_power_limits_gui.py:161
+#, python-format
+msgid "Could not complete the request. %(detail)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:173
+msgid "Failed to apply CPU settings"
+msgstr ""
+
+#: cpu_power_limits_gui.py:174
+msgid "Open the panel to inspect the error and current readings."
+msgstr ""
+
+#: cpu_power_limits_gui.py:269 cpu_power_limits_gui.py:753
+#: cpu_power_limits_view.py:70
+msgid "Status unavailable"
+msgstr ""
+
+#: cpu_power_limits_gui.py:379 cpu_power_limits_gui.py:755
+msgid "Could not refresh status"
+msgstr ""
+
+#: cpu_power_limits_gui.py:381 cpu_power_limits_gui.py:759
+msgid "Applying configuration…"
+msgstr ""
+
+#: cpu_power_limits_gui.py:400 cpu_power_limits_gui.py:658
+#: cpu_power_limits_gui.py:768
+msgid "AC"
+msgstr ""
+
+#: cpu_power_limits_gui.py:400 cpu_power_limits_gui.py:658
+#: cpu_power_limits_gui.py:768
+msgid "Battery"
+msgstr ""
+
+#: cpu_power_limits_gui.py:400 cpu_power_limits_gui.py:768
+msgid "Unknown power source"
+msgstr ""
+
+#: cpu_power_limits_gui.py:401
+#, python-format
+msgid "%(profile)s · %(pl1)s / %(pl2)s W"
+msgstr ""
+
+#: cpu_power_limits_gui.py:402 cpu_power_limits_gui.py:762
+#, python-format
+msgid "Last checked: %(time)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:405
+msgid "Temporary configuration active"
+msgstr ""
+
+#: cpu_power_limits_gui.py:408
+msgid "Open panel"
+msgstr ""
+
+#: cpu_power_limits_gui.py:409 cpu_power_limits_gui.py:583
+msgid "Refresh"
+msgstr ""
+
+#: cpu_power_limits_gui.py:410 cpu_power_limits_gui.py:584
+msgid "Reapply"
+msgstr ""
+
+#: cpu_power_limits_gui.py:412 cpu_power_limits_gui.py:562
+#: cpu_power_limits_gui.py:649
+msgid "End test"
+msgstr ""
+
+#: cpu_power_limits_gui.py:414
+msgid "Quit"
+msgstr ""
+
+#: cpu_power_limits_gui.py:530
+msgid "Power limits & voltage offsets"
+msgstr ""
+
+#: cpu_power_limits_gui.py:551
+msgid "Status"
+msgstr ""
+
+#: cpu_power_limits_gui.py:552
+msgid "Loading…"
+msgstr ""
+
+#: cpu_power_limits_gui.py:561
+msgid "Temporary configuration active until restart"
+msgstr ""
+
+#: cpu_power_limits_gui.py:566 cpu_power_limits_gui.py:651
+msgid "Power limits"
+msgstr ""
+
+#: cpu_power_limits_gui.py:566 cpu_power_limits_gui.py:665
+msgid "Undervolt"
+msgstr ""
+
+#: cpu_power_limits_gui.py:574
+msgid "Readings are snapshots. Refresh to check for later hardware changes."
+msgstr ""
+
+#: cpu_power_limits_gui.py:575
+msgid "Errors and technical details"
+msgstr ""
+
+#: cpu_power_limits_gui.py:582
+msgid "Copy diagnostics"
+msgstr ""
+
+#: cpu_power_limits_gui.py:646
+msgid "Configuration"
+msgstr ""
+
+#: cpu_power_limits_gui.py:655
+msgid "Power source"
+msgstr ""
+
+#: cpu_power_limits_gui.py:668
+#, python-format
+msgid "Manage %(domain)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:675
+msgid ""
+"Enter undervolt magnitudes; applied offsets are negative. Unchecked domains "
+"are preserved. Set 0 to reset a managed offset."
+msgstr ""
+
+#: cpu_power_limits_gui.py:676
+msgid "Expected hardware rounding"
+msgstr ""
+
+#: cpu_power_limits_gui.py:685 cpu_power_limits_gui.py:836
+msgid "Discard changes"
+msgstr ""
+
+#: cpu_power_limits_gui.py:686
+msgid "Test for this boot"
+msgstr ""
+
+#: cpu_power_limits_gui.py:687
+msgid "Save and apply"
+msgstr ""
+
+#: cpu_power_limits_gui.py:721
+#, python-format
+msgid "%(domain)s: %(value)s mV"
+msgstr ""
+
+#: cpu_power_limits_gui.py:724
+msgid ""
+"Enter positive whole watts with PL1 ≤ PL2, and undervolt magnitudes from 0 "
+"to 1000 mV."
+msgstr ""
+
+#: cpu_power_limits_gui.py:734 cpu_power_limits_gui.py:757
+msgid "Waiting for authorization or application…"
+msgstr ""
+
+#: cpu_power_limits_gui.py:735
+msgid "Changes not applied"
+msgstr ""
+
+#: cpu_power_limits_gui.py:735
+msgid "No unapplied changes"
+msgstr ""
+
+#: cpu_power_limits_gui.py:764
+msgid "Succeeded"
+msgstr ""
+
+#: cpu_power_limits_gui.py:764
+msgid "Saved; application failed"
+msgstr ""
+
+#: cpu_power_limits_gui.py:764
+msgid "Failed"
+msgstr ""
+
+#: cpu_power_limits_gui.py:765
+#, python-format
+msgid "Last application: %(time)s · %(result)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:769
+msgid "Temporary configuration"
+msgstr ""
+
+#: cpu_power_limits_gui.py:769
+msgid "Saved configuration"
+msgstr ""
+
+#: cpu_power_limits_gui.py:770
+#, python-format
+msgid "%(profile)s · %(source)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:771
+msgid "Editing temporary configuration — active until restart"
+msgstr ""
+
+#: cpu_power_limits_gui.py:771
+msgid "Editing saved configuration"
+msgstr ""
+
+#: cpu_power_limits_gui.py:786
+#, python-format
+msgid "Expected %(value)s %(unit)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:788
+msgid "Read unavailable"
+msgstr ""
+
+#: cpu_power_limits_gui.py:788
+msgid "Not managed"
+msgstr ""
+
+#: cpu_power_limits_gui.py:788
+msgid "Value mismatch"
+msgstr ""
+
+#: cpu_power_limits_gui.py:788
+msgid "Sustained power"
+msgstr ""
+
+#: cpu_power_limits_gui.py:788
+msgid "Short-term power"
+msgstr ""
+
+#: cpu_power_limits_gui.py:788
+msgid "Verified"
+msgstr ""
+
+#: cpu_power_limits_gui.py:791
+#, python-format
+msgid "%(setting)s: %(value)s %(unit)s. %(state)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:796
+msgid "Restoration is pending. Reapply to retry."
+msgstr ""
+
+#: cpu_power_limits_gui.py:821
+msgid "Preview only. No configuration or hardware was changed."
+msgstr ""
+
+#: cpu_power_limits_gui.py:827
+msgid "Diagnostics copied to the clipboard."
+msgstr ""
+
+#: cpu_power_limits_gui.py:833
+msgid "Discard unapplied changes?"
+msgstr ""
+
+#: cpu_power_limits_gui.py:834
+msgid "Your edits have not been saved or applied."
+msgstr ""
+
+#: cpu_power_limits_gui.py:835
+msgid "Keep editing"
+msgstr ""
+
+#: cpu_power_limits_gui.py:846 cpu_power_limits_gui.py:853
+msgid "Please wait for the current operation before closing the panel."
+msgstr ""
+
+#: cpu_power_limits_view.py:53
+msgid "Unknown"
+msgstr ""
+
+#: cpu_power_limits_view.py:68
+msgid "Application failed"
+msgstr ""
+
+#: cpu_power_limits_view.py:73
+msgid "Some readings are unavailable"
+msgstr ""
+
+#: cpu_power_limits_view.py:75
+msgid "Values differ from configuration"
+msgstr ""
+
+#: cpu_power_limits_view.py:77
+msgid "Restoration is pending"
+msgstr ""
+
+#: cpu_power_limits_view.py:78
+msgid "Applied and verified"
+msgstr ""
+
+#: cpu_power_limits_view.py:78
+msgid "Values match configuration"
+msgstr ""
+
+#: data/cpu-power-limits.desktop.in:3
+#: data/cpu-power-limits-autostart.desktop.in:3
+msgid "CPU Power Limits"
+msgstr ""
+
+#: data/cpu-power-limits.desktop.in:4
+msgid "Inspect and configure CPU power limits and undervolting"
+msgstr ""
+
+#: data/cpu-power-limits-autostart.desktop.in:4
+msgid "Show the CPU Power Limits status indicator"
+msgstr ""

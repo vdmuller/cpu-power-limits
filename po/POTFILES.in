@@ -1,0 +1,4 @@
+cpu_power_limits_gui.py
+cpu_power_limits_view.py
+data/cpu-power-limits.desktop.in
+data/cpu-power-limits-autostart.desktop.in

@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
 import fcntl
+import json
 import os
 from pathlib import Path
 import re
@@ -43,8 +44,12 @@ def decode_offset(bits):
 
 
 def read_config(path):
+    return parse_config(Path(path).read_text())
+
+
+def parse_config(text):
     settings = {}
-    for number, line in enumerate(Path(path).read_text().splitlines(), 1):
+    for number, line in enumerate(text.splitlines(), 1):
         line = line.split("#", 1)[0].strip()
         if not line:
             continue
@@ -255,11 +260,57 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="/etc/cpu-power-limits.conf")
     parser.add_argument("--profile", choices=("auto", "ac", "battery"))
+    parser.add_argument("--managed", action="store_true", help="Use the boot-local configuration and publish desktop status")
+    parser.add_argument("--state-file", help="Managed status destination (default: /run/cpu-power-limits/status.json)")
     modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--operation", choices=("save", "test", "end-test", "reapply"),
+                       help="Managed operation; read configuration JSON from stdin")
+    parser.add_argument("--json", action="store_true", help="Return a managed status snapshot as JSON")
     modes.add_argument("--status", action="store_true", help="Query current values without setting limits or offsets")
     modes.add_argument("--validate", action="store_true", help="Validate configuration only; no hardware access")
     modes.add_argument("--preflight", action="store_true", help="Validate configuration and hardware before installation")
     args = parser.parse_args(argv)
+    if (args.operation or args.json) and not args.managed:
+        parser.error("--operation and --json require --managed")
+    if args.state_file and not args.managed:
+        parser.error("--state-file requires --managed")
+    if args.managed:
+        if args.validate or args.preflight:
+            parser.error("--managed cannot be combined with --validate or --preflight")
+        from cpu_power_limits_control import Controller
+        control = Controller(config=args.config, state_file=args.state_file,
+                             runtime=os.environ.get("CPU_POWER_LIMITS_RUNTIME_ROOT", "/run/cpu-power-limits"))
+        configuration = None
+        if args.operation:
+            raw = sys.stdin.buffer.read(16385)
+            if len(raw) > 16384:
+                raise Error("Oversized configuration")
+            try:
+                configuration = json.loads(raw)
+            except (ValueError, UnicodeError) as error:
+                raise Error("Invalid configuration JSON") from error
+            if args.operation not in ("save", "test") and configuration != {}:
+                raise Error("This operation does not accept a configuration")
+        snapshot = control.refresh() if args.status else control.change(
+            args.operation or "reapply", configuration, profile=args.profile or "auto")
+        if args.json:
+            print(json.dumps(snapshot, allow_nan=False))
+        else:
+            for key, value in snapshot["readings"].items():
+                print(f"{key}={value if value is not None else 'unavailable'}")
+        if snapshot.get("last_application") and not args.status:
+            last = snapshot["last_application"]
+            if last["error"]:
+                print(f"cpu-power-limits: error: {last['error']}", file=sys.stderr)
+            else:
+                try:
+                    notify_status(f"Last applied {last['timestamp']}; profile={snapshot['profile']}; " +
+                                  "; ".join(f"{k}={v}" for k, v in snapshot["readings"].items()))
+                except (Error, OSError) as error:
+                    print(f"cpu-power-limits: warning: status notification failed: {error}", file=sys.stderr)
+            return 0 if last["success"] else 1
+        return 1 if any(error["code"] != "offset" for error in snapshot["errors"]) or any(
+            snapshot["readings"].get(k) != v for k, v in snapshot["expected"].items()) else 0
     settings = read_config(args.config)
     if args.validate:
         print("cpu-power-limits: configuration valid")
@@ -331,4 +382,6 @@ def cli():
 
 
 if __name__ == "__main__":
+    # Keep the engine's exception types identical when the controller imports it.
+    sys.modules.setdefault("cpu_power_limits", sys.modules[__name__])
     sys.exit(cli())

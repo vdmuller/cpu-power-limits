@@ -55,6 +55,7 @@ class UninstallTests(unittest.TestCase):
     def run_lifecycle(self, purge='false', restore='false', **variables):
         harness = r'''
 source "$1/uninstall.sh"
+stop_indicators() { printf 'stop_indicators\n' >> "$TEST_LOG"; }
 systemctl() {
     printf 'systemctl %s\n' "$*" >> "$TEST_LOG"
     [[ "$1" != "${FAIL_COMMAND:-none}" ]] || return 1
