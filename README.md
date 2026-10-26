@@ -13,17 +13,27 @@ Power limits use the kernel's **Intel RAPL MMIO** interface. Voltage offsets use
 the Intel OC mailbox at MSR `0x150`. The program verifies every change by reading
 it back. Failed or interrupted applications leave already applied settings in place.
 
+| Component | Responsibility | Runs when |
+| --- | --- | --- |
+| [Service and CLI](#cpu-power-limits-service-and-cli) | Apply and verify hardware settings | Boot, power-source changes, resume or manual commands |
+| [Desktop application](#desktop-application) | Show readings, edit settings and start temporary tests | Indicator at login; panel when opened; helper on demand |
+
+The installer installs both components. Closing the desktop application leaves
+the service enabled and the applied settings in place.
+
+- [Installation](#installation)
+- [Service and CLI](#cpu-power-limits-service-and-cli)
+- [Desktop application and screenshots](#desktop-application)
+- [Removal](#removal), including [manual removal](#manual-removal)
+
 ## Requirements and compatibility
+
+### Service and CLI requirements
 
 - Linux with systemd, udev and an Intel `intel-rapl-mmio` powercap zone named
   `package-0`, exposing `long_term` and `short_term` constraints.
 - Python **3.10+**, Bash, GNU coreutils, `flock` (util-linux) and `modprobe` (kmod).
   The command-line hardware engine uses the Python standard library.
-- The default desktop installation also requires system Python's PyGObject,
-  GTK **3**, Dbusmenu GLib, a session D-Bus, polkit and GNU gettext
-  (`msgfmt`). On Debian/Ubuntu, install `python3-gi gir1.2-gtk-3.0
-  gir1.2-dbusmenu-glib-0.4 gettext`. GNOME needs an AppIndicator-compatible
-  extension to display the tray icon; the installer does not install extensions.
 - Root privileges for installation and hardware operations. Use `sudo` for checks
   too: mailbox queries require read/write access and all queries are serialized.
 - For undervolting: the `msr` kernel module, `/dev/cpu/0/msr`, and firmware that
@@ -41,7 +51,19 @@ offsets. It does not change PL4, time windows, enable bits, frequencies, thermal
 targets or Analog I/O offsets. Other power-limit mechanisms or firmware can still
 restrict effective power or overwrite settings later.
 
+### Desktop application requirements
+
+- The default desktop installation also requires system Python's PyGObject,
+  GTK **4.12+**, libadwaita **1.5+**, Dbusmenu GLib, a session D-Bus, polkit
+  and GNU gettext (`msgfmt`). On Debian/Ubuntu, install `python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
+  gir1.2-dbusmenu-glib-0.4 gettext`. GNOME needs an AppIndicator-compatible
+  extension to display the tray icon; the installer does not install extensions.
+
 ## Installation
+
+The supplied installer installs the service, CLI, desktop application and helper
+together. The requirements above distinguish their runtime dependencies; the
+installer also requires GNU gettext (`msgfmt`) to prepare desktop resources.
 
 ```bash
 git clone git@github.com:vdmuller/cpu-power-limits.git
@@ -76,7 +98,7 @@ configured. Preflight cannot prove firmware will accept a change; application
 performs the actual write/readback verification. Re-running the installer upgrades
 the program without replacing the configuration or duplicating rules and hooks.
 
-Installed files:
+### Service and CLI files
 
 | Location | Purpose |
 | --- | --- |
@@ -86,10 +108,14 @@ Installed files:
 | `/etc/systemd/system/cpu-power-limits.service` | System service |
 | `/etc/udev/rules.d/91-cpu-power-limits.rules` | Power-source change trigger |
 | `/usr/lib/systemd/system-sleep/cpu-power-limits` | Resume hook |
+
+### Desktop application files
+
+| Location | Purpose |
+| --- | --- |
 | `/usr/local/bin/cpu-power-limits-indicator` | Desktop application launcher |
 | `/usr/local/libexec/cpu-power-limits-gui` | GTK application |
 | `/usr/local/libexec/cpu-power-limits-helper` | Privileged D-Bus helper |
-| `/usr/local/libexec/cpu_power_limits*.py` | Shared Python modules |
 | `/etc/systemd/system/cpu-power-limits-helper.service` | D-Bus activated helper |
 | `/etc/xdg/autostart/cpu-power-limits.desktop` | Start the indicator at login |
 | `/usr/local/share/applications/io.github.vdmuller.CpuPowerLimits.Indicator.desktop` | Applications menu entry |
@@ -97,8 +123,13 @@ Installed files:
 | `/usr/share/dbus-1/system-services/io.github.vdmuller.CpuPowerLimits.service` | Helper activation |
 | `/usr/share/polkit-1/actions/io.github.vdmuller.CpuPowerLimits.policy` | Read/change authorization |
 
+The shared Python modules (`/usr/local/libexec/cpu_power_limits*.py`) support
+both the CLI and desktop components.
+
 Icons are installed in `/usr/local/libexec/icons` and the local hicolor icon theme.
 Any supplied translations are compiled to `/usr/local/share/locale`.
+
+### Offline staging
 
 For offline packaging or inspection, stage files in an existing directory:
 
@@ -110,123 +141,14 @@ mkdir -p /tmp/cpu-power-limits-stage
 Staging validates the configuration and copies files only. It never queries
 hardware, loads modules, controls thermald, or enables/restarts services.
 
-## Desktop application
+## cpu-power-limits service and CLI
 
-Open **CPU Power Limits** from the applications menu, or run
-`cpu-power-limits-indicator`. The indicator starts automatically at the next
-login. Installation does not launch a graphical process as root.
+`cpu-power-limits.service` applies the hardware settings at boot, when the power
+source changes and after resume. The `cpu-power-limits` command validates,
+applies and reads settings. These operations work without the graphical
+application running; the service uses the same hardware engine as the CLI.
 
-**Status** and **Configuration** tabs remain visible on both screens. Closing the
-window ends the panel process and frees its GTK resources; the indicator keeps
-running. **Quit** exits both processes without stopping the hardware service.
-Unapplied edits require confirmation before closing.
-
-The resident indicator uses Gio/GLib and Dbusmenu, without loading GTK. The GTK
-panel runs in a separate process only while open. The privileged helper starts
-through D-Bus when needed and exits after 15 idle seconds; pending requests,
-including authentication, prevent that timeout. Closing these processes does
-not undo applied settings or the current boot's temporary configuration.
-
-On a local demo measurement, resident memory fell from approximately 134 MiB RSS
-(window retained plus helper) to 35 MiB RSS (19 MiB PSS) after the helper exited.
-An open panel used about 103 MiB RSS in addition to the indicator, released when
-closed; the helper adds about 33 MiB while active. This reduces idle memory, not
-the peak while all components are running. These figures depend
-on the Python/GTK versions and desktop environment. The indicator watches status
-file changes and service events instead of polling hardware. The original
-hardware service remains a oneshot and does not need the desktop helper.
-
-### Status
-
-Power limits and undervolt have separate sections. Each card shows the current
-read-back value, green when it matches a managed target, or amber on a mismatch,
-with the expected value beneath it. Unmanaged domains stay neutral; an unreadable
-value is shown as a dash, never as zero or a verified value.
-
-Readings refresh on opening the panel, on **Refresh**, and after applying.
-The last-read timestamp is always visible: readings are snapshots, not continuous
-hardware monitoring. Service-triggered applications also update the indicator.
-Application failures, read errors, and hardware mismatches are distinguished.
-**Copy diagnostics** copies the latest structured snapshot, including errors.
-
-The app sends one notification per new failed application while it is running.
-Opening it with an existing failure does not repeat an old notification. Reading
-settings requires an active local session but no password; changing settings uses
-the system's polkit authentication dialog. Authentication cancellation does not
-change the existing configuration or last application result.
-
-### Saved and temporary configurations
-
-Edit AC and battery PL1/PL2 in watts, plus global undervolt magnitudes in mV.
-Unchecked domains preserve their offsets. A checked domain with **0** explicitly
-resets its offset. Hardware quantization is shown under **Expected hardware
-rounding**.
-
-- **Save and apply** writes `/etc/cpu-power-limits.conf` atomically, preserving
-  comments, ends any temporary test, and applies the saved settings. A hardware
-  failure after saving is reported as **Configuration saved; application failed**.
-- **Test for this boot** writes only `/run/cpu-power-limits/temporary.json`.
-  Automatic applications after suspend or a power-source change use this
-  configuration until reboot or **End test**. The permanent file is unchanged.
-- **End test** reapplies the permanent settings.
-  For offsets changed during the test but not managed by the saved settings, it
-  restores their pre-test values. If restoration fails, its baseline is retained
-  for a later **Reapply**; the failure is shown explicitly. Tests that would need
-  to restore a positive offset are rejected before hardware changes.
-
-Reboot removes the runtime override. Firmware normally reinitializes hardware,
-but this program does not guarantee that reboot resets an unmanaged offset.
-Failed applications can leave partial changes, just like the existing CLI;
-there is no automatic rollback after arbitrary application errors.
-
-The system service uses the new **managed** CLI mode, which honors the override
-and publishes `/run/cpu-power-limits/status.json` with schema version 1:
-
-```bash
-sudo cpu-power-limits --managed --status
-sudo cpu-power-limits --managed --profile auto
-```
-
-Legacy CLI modes retain their behavior: explicit direct applications use the
-specified saved configuration and can overwrite values from a temporary test.
-Use managed mode or the desktop to keep the current boot's configuration.
-
-The helper exposes only `GetStatus()` and `Apply(operation, configuration)` on
-`io.github.vdmuller.CpuPowerLimits.Control`, at
-`/io/github/vdmuller/CpuPowerLimits`. Configuration is JSON containing known
-configuration keys with bounded numeric strings. Only `save`, `test`, `end-test`
-and `reapply` operations are accepted. No executable names, shell commands or
-filesystem paths are accepted from the desktop. Polkit checks the actual D-Bus
-sender. The helper only authorizes and forwards requests to the fixed
-`/usr/local/libexec/cpu-power-limits` executable; it never invokes the controller
-or accesses hardware directly. All entry points use this command, which owns
-configuration validation, persistence, application, verification and locking.
-
-The command's machine interface uses `--managed --json --status` for readings,
-and `--managed --json --operation save|test|end-test|reapply` for changes.
-Operations read a configuration JSON object from standard input (`{}` for
-`end-test` and `reapply`) and return a status snapshot on standard output.
-Exit status 1 can include a snapshot describing an application failure;
-validation errors before execution are reported on standard error.
-
-### Language and preview
-
-English is the original language and fallback. Translations follow the session
-language. Add a gettext catalog such as `po/pt_BR.po`, add its locale to
-`po/LINGUAS`, then reinstall to compile its `.mo` and localize the desktop entries.
-Update the template with `bash tools/update-translations.sh`. Preserve named
-placeholders in translations; `msgfmt --check` validates them during installation.
-Technical hardware error details remain in their original form.
-
-Preview the actual GTK interface without reading or changing hardware:
-
-```bash
-python3 cpu_power_limits_gui.py --demo
-python3 cpu_power_limits_gui.py --demo --demo-state failed
-python3 cpu_power_limits_gui.py --demo --demo-tab configuration
-```
-
-## thermald
+### thermald
 
 If thermald is installed, interactive installation asks whether to stop, disable
 and persistently mask `thermald.service` and its D-Bus alias. The default is **No**.
@@ -246,7 +168,7 @@ Other tools can overwrite limits too. If disabling thermald fails, installation
 stops before applying this project's settings. Earlier installation steps or
 thermald state changes are not automatically undone.
 
-## Configuration
+### Configuration
 
 Edit `/etc/cpu-power-limits.conf`. The file is parsed as data, never sourced as
 shell code. Blank lines, whitespace and `#` comments are accepted. Duplicate or
@@ -308,7 +230,7 @@ with calculation checking, individual-core and load/idle transitions, graphics
 workloads for iGPU changes, battery use and suspend/resume. Instability can cause
 crashes or data loss.
 
-## Checking current values
+### Checking current values
 
 ```bash
 sudo cpu-power-limits --status
@@ -346,7 +268,7 @@ invalid CLI arguments, 130 for interruption. `--help` lists options. Omitting
 `--status`, `--validate` and `--preflight` applies settings (automatic profile by
 default). `--preflight` validates hardware access without applying targets.
 
-## systemd status and triggers
+### systemd status and triggers
 
 ```bash
 systemctl status cpu-power-limits.service
@@ -373,7 +295,7 @@ enable hibernation or depend on any external power-management targets/services.
 There is no polling or automatic correction between events. Firmware changes
 after verification remain until the next trigger or manual restart.
 
-## Failures and recovery
+### Failures and recovery
 
 Configuration and readable configured offsets are checked before target writes.
 PL2 is raised before PL1 when needed; PL1 is lowered first when reducing limits.
@@ -387,29 +309,149 @@ Inspect values with `--status` after errors. A readable mailbox that ignores wri
 is detected by a mismatch; blocked mailbox commands report their response status
 or timeout. These errors do not cause firmware protections to be bypassed.
 
-## Migration from the linux setup module
+### Managed CLI and temporary configurations
 
-Existing four-key configurations remain valid and are preserved. Running this
-installer replaces the same main service, executable, udev rule and suspend hook.
-It disables the known older `cpu-power-limits@ac.service`,
-`cpu-power-limits@battery.service` and `cpu-power-limits-resume.service` units and
-removes their template/resume helper. It does not modify `power-state.service`,
-AC/battery targets or other projects' udev rules.
-
-The linux setup integration clones the latest default branch of this repository
-on each actual module run. It owns a separate configuration at
-`configs/cpu-power-limits/cpu-power-limits.conf` in the linux project, validates it
-and hardware access, then copies it to `/etc/cpu-power-limits.conf` **without a
-backup** before running this installer. This replacement is specific to the linux
-module; the standalone installer itself preserves existing configuration.
-
-Completed modules are still skipped by the setup framework. To update the program
-or apply changes from the linux project's configuration, reset and run the module:
+The system service uses **managed** CLI mode, which honors temporary settings
+created by the [desktop application](#saved-and-temporary-configurations) in
+`/run/cpu-power-limits/temporary.json`. It publishes
+`/run/cpu-power-limits/status.json` with schema version 1:
 
 ```bash
-./setup.sh --reset cpu-power-limits
-./setup.sh --module cpu-power-limits
+sudo cpu-power-limits --managed --status
+sudo cpu-power-limits --managed --profile auto
 ```
+
+Legacy CLI modes retain their behavior: explicit direct applications use the
+specified saved configuration and can overwrite values from a temporary test.
+Use managed mode or the desktop to keep the current boot's configuration.
+
+## Desktop application
+
+The graphical application provides a tray indicator and a GTK 4/libadwaita panel for reading
+status, editing saved settings and testing temporary configurations. It uses the
+service's command-line engine through a privileged D-Bus helper. The helper is
+`cpu-power-limits-helper.service`, separate from the hardware application service
+`cpu-power-limits.service`.
+
+Open **CPU Power Limits** from the applications menu, or run
+`cpu-power-limits-indicator`. The indicator starts automatically at the next
+login. Installation does not launch a graphical process as root.
+
+**Status** and **Configuration** tabs remain visible on both screens. Closing the
+window ends the panel process and frees its GTK resources; the indicator keeps
+running. **Quit** exits both processes without stopping the hardware service.
+Unapplied edits require confirmation before closing.
+
+The resident indicator uses Gio/GLib and Dbusmenu, without loading GTK. The GTK
+panel runs in a separate process only while open. The privileged helper starts
+through D-Bus when needed and exits after 15 idle seconds; pending requests,
+including authentication, prevent that timeout. Closing these processes does
+not undo applied settings or the current boot's temporary configuration.
+
+The indicator watches status file changes and service events instead of polling
+hardware. The hardware service remains a oneshot and does not need the desktop
+helper. The GTK 4/libadwaita panel releases its resources when closed.
+
+### Status
+
+![Status tab showing verified power limits and voltage offsets in the dark theme](docs/screenshots/status-dark.png)
+
+*Actual GTK interface in demo mode, using the libadwaita dark appearance and sample data.*
+
+Power limits and undervolt have separate sections. Each card shows the current
+read-back value, green when it matches a managed target, or amber on a mismatch,
+with the expected value beneath it. Unmanaged domains stay neutral; an unreadable
+value is shown as a dash, never as zero or a verified value.
+
+Readings refresh on opening the panel, on **Refresh**, and after applying.
+The last-read timestamp is always visible: readings are snapshots, not continuous
+hardware monitoring. Service-triggered applications also update the indicator.
+Application failures, read errors, and hardware mismatches are distinguished.
+**Copy diagnostics** copies the latest structured snapshot, including errors.
+
+The app sends one notification per new failed application while it is running.
+Opening it with an existing failure does not repeat an old notification. Reading
+settings requires an active local session but no password; changing settings uses
+the system's polkit authentication dialog. Authentication cancellation does not
+change the existing configuration or last application result.
+
+### Saved and temporary configurations
+
+![Configuration tab showing AC and battery limits and undervolt controls in the dark theme](docs/screenshots/configuration-dark.png)
+
+*Configuration tab in demo mode. Values are illustrative, not tuning recommendations.*
+
+Edit AC and battery PL1/PL2 in watts, plus global undervolt magnitudes in mV.
+Unchecked domains preserve their offsets. A checked domain with **0** explicitly
+resets its offset. Hardware quantization is shown under **Expected hardware
+rounding**.
+
+- **Save and apply** writes `/etc/cpu-power-limits.conf` atomically, preserving
+  comments, ends any temporary test, and applies the saved settings. A hardware
+  failure after saving is reported as **Configuration saved; application failed**.
+- **Test for this boot** writes only `/run/cpu-power-limits/temporary.json`.
+  Automatic applications after suspend or a power-source change use this
+  configuration until reboot or **End test**. The permanent file is unchanged.
+- **End test** reapplies the permanent settings.
+  For offsets changed during the test but not managed by the saved settings, it
+  restores their pre-test values. If restoration fails, its baseline is retained
+  for a later **Reapply**; the failure is shown explicitly. Tests that would need
+  to restore a positive offset are rejected before hardware changes.
+
+Reboot removes the runtime override. Firmware normally reinitializes hardware,
+but this program does not guarantee that reboot resets an unmanaged offset.
+Failed applications can leave partial changes, just like the existing CLI;
+there is no automatic rollback after arbitrary application errors.
+
+### Privileged helper and D-Bus interface
+
+The helper exposes only `GetStatus()` and `Apply(operation, configuration)` on
+`io.github.vdmuller.CpuPowerLimits.Control`, at
+`/io/github/vdmuller/CpuPowerLimits`. Configuration is JSON containing known
+configuration keys with bounded numeric strings. Only `save`, `test`, `end-test`
+and `reapply` operations are accepted. No executable names, shell commands or
+filesystem paths are accepted from the desktop. Polkit checks the actual D-Bus
+sender. The helper only authorizes and forwards requests to the fixed
+`/usr/local/libexec/cpu-power-limits` executable; it never invokes the controller
+or accesses hardware directly. All entry points use this command, which owns
+configuration validation, persistence, application, verification and locking.
+
+The command's machine interface uses `--managed --json --status` for readings,
+and `--managed --json --operation save|test|end-test|reapply` for changes.
+Operations read a configuration JSON object from standard input (`{}` for
+`end-test` and `reapply`) and return a status snapshot on standard output.
+Exit status 1 can include a snapshot describing an application failure;
+validation errors before execution are reported on standard error.
+
+### Language and preview
+
+English is the original language and fallback. Translations follow the session
+language. Add a gettext catalog such as `po/pt_BR.po`, add its locale to
+`po/LINGUAS`, then reinstall to compile its `.mo` and localize the desktop entries.
+Update the template with `bash tools/update-translations.sh`. Preserve named
+placeholders in translations; `msgfmt --check` validates them during installation.
+Technical hardware error details remain in their original form.
+
+Preview the actual GTK interface without reading or changing hardware:
+
+```bash
+python3 cpu_power_limits_gui.py --demo
+python3 cpu_power_limits_gui.py --demo --demo-state failed
+python3 cpu_power_limits_gui.py --demo --demo-tab configuration
+```
+
+Generate the dark-theme screenshots above from the actual application (requires
+an available graphical display):
+
+```bash
+mkdir -p docs/screenshots
+LC_ALL=C python3 cpu_power_limits_gui.py --demo --dark --demo-tab status --screenshot docs/screenshots/status-dark.png
+LC_ALL=C python3 cpu_power_limits_gui.py --demo --dark --demo-tab configuration --screenshot docs/screenshots/configuration-dark.png
+```
+
+The panel follows the system light/dark preference by default; `--dark` forces
+the libadwaita dark appearance. Demo mode uses sample data and does not read or
+change hardware.
 
 ## Removal
 
@@ -438,6 +480,80 @@ thermald may adjust hardware limits after it starts. Offline removal is availabl
 with `./uninstall.sh --root /tmp/cpu-power-limits-stage`, optionally with
 `--purge-config`. Offline removal never controls services. The source checkout
 is retained so it can be used to reinstall later.
+
+### Manual removal
+
+If the source checkout or `uninstall.sh` is unavailable, use **Quit** in the
+indicator menu in every logged-in desktop session, then stop the services:
+
+```bash
+sudo systemctl disable --now cpu-power-limits.service
+sudo systemctl stop cpu-power-limits-helper.service
+```
+
+Remove the installed files (the configuration is preserved):
+
+```bash
+sudo rm -f -- \
+  /etc/systemd/system/cpu-power-limits.service \
+  /etc/systemd/system/cpu-power-limits-helper.service \
+  /etc/udev/rules.d/91-cpu-power-limits.rules \
+  /usr/lib/systemd/system-sleep/cpu-power-limits \
+  /usr/local/bin/cpu-power-limits \
+  /usr/local/bin/cpu-power-limits-indicator \
+  /usr/local/libexec/cpu-power-limits \
+  /usr/local/libexec/cpu-power-limits-gui \
+  /usr/local/libexec/cpu-power-limits-helper \
+  /usr/local/libexec/cpu_power_limits.py \
+  /usr/local/libexec/cpu_power_limits_control.py \
+  /usr/local/libexec/cpu_power_limits_view.py \
+  /usr/local/libexec/cpu_power_limits_helper.py \
+  /etc/xdg/autostart/cpu-power-limits.desktop \
+  /usr/local/share/applications/io.github.vdmuller.CpuPowerLimits.Indicator.desktop \
+  /etc/dbus-1/system.d/io.github.vdmuller.CpuPowerLimits.conf \
+  /usr/share/dbus-1/system-services/io.github.vdmuller.CpuPowerLimits.service \
+  /usr/share/polkit-1/actions/io.github.vdmuller.CpuPowerLimits.policy \
+  /usr/local/share/locale/*/LC_MESSAGES/cpu-power-limits.mo \
+  /run/cpu-power-limits/status.json \
+  /run/cpu-power-limits/temporary.json
+
+for name in cpu-power-limits cpu-power-limits-ok cpu-power-limits-warning \
+  cpu-power-limits-error cpu-power-limits-unknown cpu-power-limits-applying; do
+  sudo rm -f -- \
+    "/usr/local/libexec/icons/$name.svg" \
+    "/usr/local/share/icons/hicolor/scalable/apps/$name.svg"
+done
+
+for name in cpu_power_limits cpu_power_limits_control cpu_power_limits_view cpu_power_limits_helper; do
+  sudo rm -f -- /usr/local/libexec/__pycache__/"$name".cpython-*.pyc
+done
+sudo rmdir -- /run/cpu-power-limits 2>/dev/null || true
+
+sudo systemctl daemon-reload
+sudo systemctl reload dbus.service
+sudo udevadm control --reload-rules
+```
+
+If a service is already absent, its stop/disable command may report that its unit
+was not found; continue with file removal. Run these commands in Bash; unmatched
+file patterns are harmless with `rm -f`. Shared icon, locale and Python cache
+directories are left in place because other applications may use them.
+
+Optionally delete the saved configuration:
+
+```bash
+sudo rm -f -- /etc/cpu-power-limits.conf
+```
+
+If you previously disabled thermald and want to enable it again:
+
+```bash
+sudo systemctl unmask thermald.service dbus-org.freedesktop.thermald.service
+sudo systemctl enable --now thermald.service
+```
+
+As with the uninstaller, manual removal does not reset hardware limits or voltage
+offsets. The source checkout can be deleted separately if no longer needed.
 
 ## Development and tests
 

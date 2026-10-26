@@ -144,11 +144,14 @@ main() {
     /usr/bin/python3 - <<'PY'
 try:
     import gi
-    gi.require_version('Gtk', '3.0')
+    gi.require_version('Gtk', '4.0')
+    gi.require_version('Adw', '1')
     gi.require_version('Dbusmenu', '0.4')
-    from gi.repository import Gtk, Gio, Dbusmenu
+    from gi.repository import Gtk, Adw, Gio, Dbusmenu
+    if (Adw.get_major_version(), Adw.get_minor_version()) < (1, 5):
+        raise ValueError("libadwaita 1.5 or newer is required")
 except (ImportError, ValueError) as error:
-    raise SystemExit('Missing desktop dependencies: install PyGObject, GTK 3 and Dbusmenu. ' + str(error))
+    raise SystemExit('Missing desktop dependencies: install PyGObject, GTK 4, libadwaita 1.5+ and Dbusmenu. ' + str(error))
 PY
     for command in systemctl udevadm flock modprobe; do
         command -v "$command" >/dev/null || { printf 'Missing dependency: %s\n' "$command" >&2; return 1; }

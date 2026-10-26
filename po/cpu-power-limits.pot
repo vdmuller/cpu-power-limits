@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cpu-power-limits 1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 13:13-0300\n"
+"POT-Creation-Date: 2026-10-26 15:05-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -96,259 +96,259 @@ msgstr ""
 msgid "Open the panel to inspect the error and current readings."
 msgstr ""
 
-#: cpu_power_limits_gui.py:269 cpu_power_limits_gui.py:753
+#: cpu_power_limits_gui.py:269 cpu_power_limits_gui.py:778
 #: cpu_power_limits_view.py:70
 msgid "Status unavailable"
 msgstr ""
 
-#: cpu_power_limits_gui.py:379 cpu_power_limits_gui.py:755
+#: cpu_power_limits_gui.py:381 cpu_power_limits_gui.py:780
 msgid "Could not refresh status"
 msgstr ""
 
-#: cpu_power_limits_gui.py:381 cpu_power_limits_gui.py:759
+#: cpu_power_limits_gui.py:383 cpu_power_limits_gui.py:784
 msgid "Applying configuration…"
 msgstr ""
 
-#: cpu_power_limits_gui.py:400 cpu_power_limits_gui.py:658
-#: cpu_power_limits_gui.py:768
+#: cpu_power_limits_gui.py:402 cpu_power_limits_gui.py:674
+#: cpu_power_limits_gui.py:793
 msgid "AC"
 msgstr ""
 
-#: cpu_power_limits_gui.py:400 cpu_power_limits_gui.py:658
-#: cpu_power_limits_gui.py:768
+#: cpu_power_limits_gui.py:402 cpu_power_limits_gui.py:674
+#: cpu_power_limits_gui.py:793
 msgid "Battery"
 msgstr ""
 
-#: cpu_power_limits_gui.py:400 cpu_power_limits_gui.py:768
+#: cpu_power_limits_gui.py:402 cpu_power_limits_gui.py:793
 msgid "Unknown power source"
 msgstr ""
 
-#: cpu_power_limits_gui.py:401
+#: cpu_power_limits_gui.py:403
 #, python-format
 msgid "%(profile)s · %(pl1)s / %(pl2)s W"
 msgstr ""
 
-#: cpu_power_limits_gui.py:402 cpu_power_limits_gui.py:762
+#: cpu_power_limits_gui.py:404 cpu_power_limits_gui.py:787
 #, python-format
 msgid "Last checked: %(time)s"
 msgstr ""
 
-#: cpu_power_limits_gui.py:405
+#: cpu_power_limits_gui.py:407
 msgid "Temporary configuration active"
 msgstr ""
 
-#: cpu_power_limits_gui.py:408
+#: cpu_power_limits_gui.py:410
 msgid "Open panel"
 msgstr ""
 
-#: cpu_power_limits_gui.py:409 cpu_power_limits_gui.py:583
+#: cpu_power_limits_gui.py:411 cpu_power_limits_gui.py:602
 msgid "Refresh"
 msgstr ""
 
-#: cpu_power_limits_gui.py:410 cpu_power_limits_gui.py:584
+#: cpu_power_limits_gui.py:412 cpu_power_limits_gui.py:603
 msgid "Reapply"
 msgstr ""
 
-#: cpu_power_limits_gui.py:412 cpu_power_limits_gui.py:562
-#: cpu_power_limits_gui.py:649
+#: cpu_power_limits_gui.py:414 cpu_power_limits_gui.py:581
+#: cpu_power_limits_gui.py:669
 msgid "End test"
 msgstr ""
 
-#: cpu_power_limits_gui.py:414
+#: cpu_power_limits_gui.py:416
 msgid "Quit"
 msgstr ""
 
-#: cpu_power_limits_gui.py:530
+#: cpu_power_limits_gui.py:542
 msgid "Power limits & voltage offsets"
 msgstr ""
 
-#: cpu_power_limits_gui.py:551
+#: cpu_power_limits_gui.py:557
+msgid "Dismiss"
+msgstr ""
+
+#: cpu_power_limits_gui.py:570
 msgid "Status"
 msgstr ""
 
-#: cpu_power_limits_gui.py:552
+#: cpu_power_limits_gui.py:571
 msgid "Loading…"
 msgstr ""
 
-#: cpu_power_limits_gui.py:561
+#: cpu_power_limits_gui.py:580
 msgid "Temporary configuration active until restart"
 msgstr ""
 
-#: cpu_power_limits_gui.py:566 cpu_power_limits_gui.py:651
+#: cpu_power_limits_gui.py:585 cpu_power_limits_gui.py:671
 msgid "Power limits"
 msgstr ""
 
-#: cpu_power_limits_gui.py:566 cpu_power_limits_gui.py:665
+#: cpu_power_limits_gui.py:585 cpu_power_limits_gui.py:685
 msgid "Undervolt"
 msgstr ""
 
-#: cpu_power_limits_gui.py:574
+#: cpu_power_limits_gui.py:593
 msgid "Readings are snapshots. Refresh to check for later hardware changes."
 msgstr ""
 
-#: cpu_power_limits_gui.py:575
+#: cpu_power_limits_gui.py:594
 msgid "Errors and technical details"
 msgstr ""
 
-#: cpu_power_limits_gui.py:582
+#: cpu_power_limits_gui.py:601
 msgid "Copy diagnostics"
 msgstr ""
 
-#: cpu_power_limits_gui.py:646
+#: cpu_power_limits_gui.py:666
 msgid "Configuration"
 msgstr ""
 
-#: cpu_power_limits_gui.py:655
-msgid "Power source"
-msgstr ""
-
-#: cpu_power_limits_gui.py:668
-#, python-format
-msgid "Manage %(domain)s"
-msgstr ""
-
-#: cpu_power_limits_gui.py:675
+#: cpu_power_limits_gui.py:686
 msgid ""
 "Enter undervolt magnitudes; applied offsets are negative. Unchecked domains "
 "are preserved. Set 0 to reset a managed offset."
 msgstr ""
 
-#: cpu_power_limits_gui.py:676
+#: cpu_power_limits_gui.py:688
+#, python-format
+msgid "Manage %(domain)s"
+msgstr ""
+
+#: cpu_power_limits_gui.py:700
 msgid "Expected hardware rounding"
 msgstr ""
 
-#: cpu_power_limits_gui.py:685 cpu_power_limits_gui.py:836
+#: cpu_power_limits_gui.py:709 cpu_power_limits_gui.py:863
 msgid "Discard changes"
 msgstr ""
 
-#: cpu_power_limits_gui.py:686
+#: cpu_power_limits_gui.py:710
 msgid "Test for this boot"
 msgstr ""
 
-#: cpu_power_limits_gui.py:687
+#: cpu_power_limits_gui.py:711
 msgid "Save and apply"
 msgstr ""
 
-#: cpu_power_limits_gui.py:721
+#: cpu_power_limits_gui.py:746
 #, python-format
 msgid "%(domain)s: %(value)s mV"
 msgstr ""
 
-#: cpu_power_limits_gui.py:724
+#: cpu_power_limits_gui.py:749
 msgid ""
 "Enter positive whole watts with PL1 ≤ PL2, and undervolt magnitudes from 0 "
 "to 1000 mV."
 msgstr ""
 
-#: cpu_power_limits_gui.py:734 cpu_power_limits_gui.py:757
+#: cpu_power_limits_gui.py:759 cpu_power_limits_gui.py:782
 msgid "Waiting for authorization or application…"
 msgstr ""
 
-#: cpu_power_limits_gui.py:735
+#: cpu_power_limits_gui.py:760
 msgid "Changes not applied"
 msgstr ""
 
-#: cpu_power_limits_gui.py:735
+#: cpu_power_limits_gui.py:760
 msgid "No unapplied changes"
 msgstr ""
 
-#: cpu_power_limits_gui.py:764
+#: cpu_power_limits_gui.py:789
 msgid "Succeeded"
 msgstr ""
 
-#: cpu_power_limits_gui.py:764
+#: cpu_power_limits_gui.py:789
 msgid "Saved; application failed"
 msgstr ""
 
-#: cpu_power_limits_gui.py:764
+#: cpu_power_limits_gui.py:789
 msgid "Failed"
 msgstr ""
 
-#: cpu_power_limits_gui.py:765
+#: cpu_power_limits_gui.py:790
 #, python-format
 msgid "Last application: %(time)s · %(result)s"
 msgstr ""
 
-#: cpu_power_limits_gui.py:769
+#: cpu_power_limits_gui.py:794
 msgid "Temporary configuration"
 msgstr ""
 
-#: cpu_power_limits_gui.py:769
+#: cpu_power_limits_gui.py:794
 msgid "Saved configuration"
 msgstr ""
 
-#: cpu_power_limits_gui.py:770
+#: cpu_power_limits_gui.py:795
 #, python-format
 msgid "%(profile)s · %(source)s"
 msgstr ""
 
-#: cpu_power_limits_gui.py:771
+#: cpu_power_limits_gui.py:796
 msgid "Editing temporary configuration — active until restart"
 msgstr ""
 
-#: cpu_power_limits_gui.py:771
+#: cpu_power_limits_gui.py:796
 msgid "Editing saved configuration"
 msgstr ""
 
-#: cpu_power_limits_gui.py:786
+#: cpu_power_limits_gui.py:810
 #, python-format
 msgid "Expected %(value)s %(unit)s"
 msgstr ""
 
-#: cpu_power_limits_gui.py:788
+#: cpu_power_limits_gui.py:812
 msgid "Read unavailable"
 msgstr ""
 
-#: cpu_power_limits_gui.py:788
+#: cpu_power_limits_gui.py:812
 msgid "Not managed"
 msgstr ""
 
-#: cpu_power_limits_gui.py:788
+#: cpu_power_limits_gui.py:812
 msgid "Value mismatch"
 msgstr ""
 
-#: cpu_power_limits_gui.py:788
+#: cpu_power_limits_gui.py:812
 msgid "Sustained power"
 msgstr ""
 
-#: cpu_power_limits_gui.py:788
+#: cpu_power_limits_gui.py:812
 msgid "Short-term power"
 msgstr ""
 
-#: cpu_power_limits_gui.py:788
+#: cpu_power_limits_gui.py:812
 msgid "Verified"
 msgstr ""
 
-#: cpu_power_limits_gui.py:791
+#: cpu_power_limits_gui.py:815
 #, python-format
 msgid "%(setting)s: %(value)s %(unit)s. %(state)s"
 msgstr ""
 
-#: cpu_power_limits_gui.py:796
+#: cpu_power_limits_gui.py:820
 msgid "Restoration is pending. Reapply to retry."
 msgstr ""
 
-#: cpu_power_limits_gui.py:821
+#: cpu_power_limits_gui.py:845
 msgid "Preview only. No configuration or hardware was changed."
 msgstr ""
 
-#: cpu_power_limits_gui.py:827
+#: cpu_power_limits_gui.py:851
 msgid "Diagnostics copied to the clipboard."
 msgstr ""
 
-#: cpu_power_limits_gui.py:833
+#: cpu_power_limits_gui.py:860
 msgid "Discard unapplied changes?"
 msgstr ""
 
-#: cpu_power_limits_gui.py:834
+#: cpu_power_limits_gui.py:861
 msgid "Your edits have not been saved or applied."
 msgstr ""
 
-#: cpu_power_limits_gui.py:835
+#: cpu_power_limits_gui.py:862
 msgid "Keep editing"
 msgstr ""
 
-#: cpu_power_limits_gui.py:846 cpu_power_limits_gui.py:853
+#: cpu_power_limits_gui.py:880 cpu_power_limits_gui.py:887
 msgid "Please wait for the current operation before closing the panel."
 msgstr ""
 
