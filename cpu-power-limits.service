@@ -9,7 +9,6 @@ ExecStart=/usr/local/libexec/cpu-power-limits --managed --profile auto --config 
 RuntimeDirectory=cpu-power-limits
 RuntimeDirectoryMode=0755
 RuntimeDirectoryPreserve=yes
-RemainAfterExit=yes
 NotifyAccess=all
 TimeoutStartSec=30
 StandardOutput=journal

@@ -1,2 +1,2 @@
 # Resolve the current power source inside the serialized application.
-ACTION=="change", SUBSYSTEM=="power_supply", RUN+="/usr/bin/systemctl --no-block restart cpu-power-limits.service"
+ACTION=="change", SUBSYSTEM=="power_supply", RUN+="/usr/bin/systemctl --no-block start cpu-power-limits.service"

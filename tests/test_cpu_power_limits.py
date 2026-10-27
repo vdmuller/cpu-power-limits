@@ -548,7 +548,7 @@ migrate_legacy_units
         self.assertNotIn("power-state.service", result.stdout)
         self.assertNotIn("cpu-power-limits.conf", result.stdout)
 
-    def test_sleep_hook_only_restarts_own_service_after_suspend(self):
+    def test_sleep_hook_only_starts_own_service_after_suspend(self):
         bindir = self.root / "bin"
         bindir.mkdir()
         (bindir / "systemctl").write_text('#!/bin/bash\nprintf "%s\\n" "$*"\n')
@@ -557,7 +557,7 @@ migrate_legacy_units
             result = subprocess.run(["bash", str(REPO / "cpu-power-limits-sleep"), phase, kind],
                                     env=dict(os.environ, PATH=str(bindir) + ":" + os.environ["PATH"]),
                                     capture_output=True, text=True)
-            expected = "--no-block restart cpu-power-limits.service\n" if (phase, kind) == ("post", "suspend") else ""
+            expected = "--no-block start cpu-power-limits.service\n" if (phase, kind) == ("post", "suspend") else ""
             self.assertEqual(result.stdout, expected)
 
 

@@ -276,20 +276,23 @@ journalctl -u cpu-power-limits.service -b
 sudo cpu-power-limits --status --profile auto
 ```
 
-The application service is `oneshot` with `RemainAfterExit=yes`: `active (exited)` is normal.
+The application service is `oneshot`: `inactive (dead)` after a successful run is normal.
 The systemd `Status` field contains the **last successful application** timestamp
 in UTC, profile, PL1/PL2 and read-back offsets. Detailed comparisons are recorded
 in the journal. The status is a snapshot, not a live monitor; use `--status` for
 current hardware values. Status publication failure is logged as a warning.
 
-Power-supply `change` events request a non-blocking restart. A source of type
+Power-supply `change` events request a non-blocking start. A start during an
+application does not interrupt it or queue another application. If the source
+changes after detection during that run, settings may remain for the previous
+source until another event or manual application. A source of type
 Mains, USB, USB_C, USB_PD or USB_PD_DRP with `online=1` selects AC. Sources with
 `scope=Device` are ignored. If all recognized sources are offline, battery is
 selected. If the source cannot be determined, application fails before changing
-settings. Detection occurs after taking the lock so queued events use the current
-source. Explicit profiles are available for diagnostics.
+settings. Detection occurs after taking the lock so each application uses the
+current source. Explicit profiles are available for diagnostics.
 
-The suspend hook requests a restart after resume; the service waits for
+The suspend hook requests a start after resume; the service waits for
 `systemd-suspend.service` to finish and detects the source again. It does not
 enable hibernation or depend on any external power-management targets/services.
 There is no polling or automatic correction between events. Firmware changes

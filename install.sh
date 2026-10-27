@@ -172,7 +172,6 @@ PY
     udevadm control --reload-rules
     systemctl enable cpu-power-limits.service
     systemctl restart cpu-power-limits.service
-    systemctl is-active --quiet cpu-power-limits.service
     /usr/local/libexec/cpu-power-limits --managed --status --profile auto
     printf '%s\n' 'Installed and verified cpu-power-limits.service.'
     printf '%s\n' 'Desktop indicator installed. Open CPU Power Limits from the applications menu, or log in again for autostart.'
