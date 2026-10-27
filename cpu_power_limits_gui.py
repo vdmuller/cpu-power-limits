@@ -54,6 +54,29 @@ def send_action(app_id, action, wait=True):
         return False
 
 
+def send_action_async(app_id, action, callback):
+    """Contact an existing panel without blocking the indicator's event loop."""
+    def activated(connection, result, _data):
+        try:
+            connection.call_finish(result)
+        except GLib.Error:
+            callback(False)
+        else:
+            callback(True)
+
+    def connected(_source, result, _data):
+        try:
+            connection = Gio.bus_get_finish(result)
+        except GLib.Error:
+            callback(False)
+            return
+        connection.call(app_id, action_path(app_id), "org.gtk.Actions", "Activate",
+                        GLib.Variant("(sava{sv})", (action, [], {})), None,
+                        Gio.DBusCallFlags.NO_AUTO_START, 2000, None, activated, None)
+
+    Gio.bus_get(Gio.BusType.SESSION, None, connected, None)
+
+
 class StatusClient:
     """Share event-driven state handling without importing a graphical toolkit."""
 
@@ -63,6 +86,7 @@ class StatusClient:
         self.snapshot = {}
         self.connection = None
         self.busy = False
+        self.read_pending = False
         self.service_busy = False
         self.dirty = False
         self.loading = False
@@ -73,8 +97,10 @@ class StatusClient:
         self.query_error = ""
         self.monitors = []
         self.signal_ids = []
+        self.service_query = 0
 
     def close_status(self):
+        self.service_query += 1  # Ignore replies still in flight during shutdown.
         for monitor in self.monitors:
             monitor.cancel()
         if self.connection:
@@ -85,6 +111,7 @@ class StatusClient:
         try:
             self.connection = Gio.bus_get_finish(result)
             self.signal_ids.append(self.connection.signal_subscribe("org.freedesktop.systemd1", "org.freedesktop.DBus.Properties", "PropertiesChanged", SERVICE_PATH, None, Gio.DBusSignalFlags.NONE, lambda *_: self.check_service()))
+            self.signal_ids.append(self.connection.signal_subscribe("org.freedesktop.systemd1", "org.freedesktop.systemd1.Manager", "JobRemoved", "/org/freedesktop/systemd1", None, Gio.DBusSignalFlags.NONE, self.service_job_removed))
             self.connection.call("org.freedesktop.systemd1", "/org/freedesktop/systemd1", "org.freedesktop.systemd1.Manager", "Subscribe", None, None, Gio.DBusCallFlags.NONE, 5000, None, None, None)
             self.check_service()
             if self.panel_mode or not self.snapshot:
@@ -95,9 +122,13 @@ class StatusClient:
     def check_service(self):
         if not self.connection:
             return
+        self.service_query += 1
+        query = self.service_query
         def done(connection, result, _data):
             try:
                 properties = connection.call_finish(result).unpack()[0]
+                if query != self.service_query:
+                    return
                 result_value = properties.get("Result", "success")
                 exited = properties.get("ExecMainExitTimestamp", 0) / 1000000
                 last = self.snapshot.get("last_application") or {}
@@ -114,11 +145,21 @@ class StatusClient:
         def unit_done(connection, result, _data):
             try:
                 properties = connection.call_finish(result).unpack()[0]
+                if query != self.service_query:
+                    return
                 self.service_busy = properties.get("ActiveState") in ("activating", "deactivating", "reloading")
             except GLib.Error:
+                if query != self.service_query:
+                    return
                 self.service_busy = False
             self.render()
         self.connection.call("org.freedesktop.systemd1", SERVICE_PATH, "org.freedesktop.DBus.Properties", "GetAll", GLib.Variant("(s)", ("org.freedesktop.systemd1.Unit",)), None, Gio.DBusCallFlags.NONE, 5000, None, unit_done, None)
+
+    def service_job_removed(self, _connection, _sender, _path, _interface, _signal, parameters):
+        # Completion is a separate event from unit property changes. Reconcile
+        # even when the last PropertiesChanged notification was not observed.
+        if parameters.unpack()[2] == "cpu-power-limits.service":
+            self.check_service()
 
     def request(self, operation=None, data=None):
         if self.busy or self.service_busy:
@@ -130,11 +171,13 @@ class StatusClient:
             self.show_notice(_("The system service is not connected. Reopen the application to retry."))
             return
         self.busy = True
+        self.read_pending = operation is None
         self.render()
         method = "Apply" if operation else "GetStatus"
         parameters = GLib.Variant("(ss)", (operation, json.dumps(data or {}))) if operation else None
         def done(connection, result, _data):
             self.busy = False
+            self.read_pending = False
             try:
                 response = json.loads(connection.call_finish(result).unpack()[0])
                 if not view.valid_snapshot(response):
@@ -252,7 +295,6 @@ SNI_XML = '''<node><interface name="org.kde.StatusNotifierItem">
 <property name="Menu" type="o" access="read"/>
 <property name="ItemIsMenu" type="b" access="read"/>
 <property name="ToolTip" type="(sa(iiay)ss)" access="read"/>
-<method name="Activate"><arg type="i" direction="in"/><arg type="i" direction="in"/></method>
 <method name="SecondaryActivate"><arg type="i" direction="in"/><arg type="i" direction="in"/></method>
 <method name="ContextMenu"><arg type="i" direction="in"/><arg type="i" direction="in"/></method>
 <method name="Scroll"><arg type="i" direction="in"/><arg type="s" direction="in"/></method>
@@ -265,8 +307,11 @@ class Indicator(StatusClient, Gio.Application):
         super().__init__(application_id=indicator_id(options), flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.init_status(options)
         self.panel_process = None
+        self.open_pending = False
         self.icon = "cpu-power-limits-unknown"
         self.title = _("Status unavailable")
+        self.published_icon = None
+        self.published_title = None
         self.icon_dir = str(Path(__file__).resolve().parent / "icons")
 
     def do_startup(self):
@@ -322,12 +367,21 @@ class Indicator(StatusClient, Gio.Application):
         return GLib.Variant(*values[name])
 
     def item_method(self, _connection, _sender, _path, _interface, method, _parameters, invocation):
-        if method in ("Activate", "SecondaryActivate"):
+        # This is a menu-only item. Exporting Activate makes GNOME AppIndicator
+        # delay primary clicks while waiting for a possible double click.
+        if method == "SecondaryActivate":
             self.open_panel()
         invocation.return_value(None)
 
     def open_panel(self):
-        if send_action(panel_id(self.options), "open-status") or self.panel_process:
+        if self.open_pending:
+            return
+        self.open_pending = True
+        send_action_async(panel_id(self.options), "open-status", self.panel_contacted)
+
+    def panel_contacted(self, activated):
+        self.open_pending = False
+        if activated or self.panel_process:
             return
         command = [sys.executable, str(Path(__file__).resolve()), "--panel"]
         if getattr(self.options, "dark", False):
@@ -415,8 +469,22 @@ class Indicator(StatusClient, Gio.Application):
         separator()
         item(_("Quit"), self.confirm_quit, not self.busy)
         self.menu.set_root(root)
-        for signal in ("NewIcon", "NewToolTip"):
-            self.session.emit_signal(None, SNI_PATH, SNI, signal, None)
+        changed = {}
+        signals = []
+        if self.icon != self.published_icon:
+            changed["IconName"] = GLib.Variant("s", self.icon)
+            signals.append("NewIcon")
+        if self.icon != self.published_icon or self.title != self.published_title:
+            changed["ToolTip"] = GLib.Variant("(sa(iiay)ss)", (self.icon, [], "CPU Power Limits", self.title))
+            signals.append("NewToolTip")
+        if changed:
+            # Publish values as well as SNI notifications so hosts can update
+            # their cache directly, without racing repeated property requests.
+            self.session.emit_signal(None, SNI_PATH, "org.freedesktop.DBus.Properties", "PropertiesChanged",
+                                     GLib.Variant("(sa{sv}as)", (SNI, changed, [])))
+            self.published_icon, self.published_title = self.icon, self.title
+            for signal in signals:
+                self.session.emit_signal(None, SNI_PATH, SNI, signal, None)
 
     def do_shutdown(self):
         self.close_status()
@@ -521,7 +589,7 @@ class Desktop(StatusClient, Adw.Application):
         if not (self.first_activation and self.options.autostart):
             self.render()
             self.window.present()
-            if self.connection and not self.options.demo:
+            if self.connection and not self.options.demo and not self.first_activation:
                 self.request()
         self.first_activation = False
         if self.options.demo_tab:
@@ -533,7 +601,7 @@ class Desktop(StatusClient, Adw.Application):
         self.window = Adw.ApplicationWindow(application=self)
         self.window.set_title("CPU Power Limits")
         self.window.set_icon_name("cpu-power-limits")
-        self.window.set_default_size(680, 860)
+        self.window.set_default_size(680, 780)
         self.window.connect("close-request", self.close_window)
         root = box(spacing=0)
         root.add_css_class("background")
@@ -876,14 +944,14 @@ class Desktop(StatusClient, Adw.Application):
         dialog.present(self.window)
 
     def close_window(self, *_args):
-        if self.busy:
+        if self.busy and not self.read_pending:
             self.show_notice(_("Please wait for the current operation before closing the panel."))
         else:
             self.confirm_discard(self.quit)
         return True
 
     def confirm_quit(self):
-        if self.busy:
+        if self.busy and not self.read_pending:
             self.show_notice(_("Please wait for the current operation before closing the panel."))
         else:
             self.confirm_discard(self.quit_all)

@@ -143,6 +143,13 @@ class IndicatorBusTests(unittest.TestCase):
             props = call("/StatusNotifierItem", "org.freedesktop.DBus.Properties", "GetAll", GLib.Variant("(s)", ("org.kde.StatusNotifierItem",)))[0]
             self.assertEqual(props["IconName"], "cpu-power-limits-ok")
             self.assertEqual(props["Menu"], "/Menu")
+            self.assertTrue(props["ItemIsMenu"])
+            xml = call("/StatusNotifierItem", "org.freedesktop.DBus.Introspectable", "Introspect")[0]
+            interface = Gio.DBusNodeInfo.new_for_xml(xml).lookup_interface("org.kde.StatusNotifierItem")
+            # GNOME waits for a double click when Activate is advertised, even
+            # with ItemIsMenu=true. Menu-only items must omit that method.
+            self.assertIsNone(interface.lookup_method("Activate"))
+            self.assertIsNotNone(interface.lookup_method("SecondaryActivate"))
             _revision, layout = call("/Menu", "com.canonical.dbusmenu", "GetLayout", GLib.Variant("(iias)", (0, -1, [])))
             entries = {child[1].get("label"): child[0] for child in layout[2]}
             self.assertIn("Open panel", entries)

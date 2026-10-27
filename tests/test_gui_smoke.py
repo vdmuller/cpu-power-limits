@@ -128,6 +128,37 @@ class GuiTests(unittest.TestCase):
             self.assertFalse(app.dirty)
             quit_app.assert_called_once()
 
+    def test_pending_status_read_allows_close_but_pending_write_does_not(self):
+        from unittest.mock import Mock
+        app = self.app
+        original = app.connection
+        try:
+            app.options.demo = False
+            app.connection = Mock()  # Leave the asynchronous request pending.
+            with patch.object(app, "quit") as quit_app, patch.object(app, "quit_all") as quit_all:
+                app.request()
+                self.assertTrue(app.busy)
+                self.assertTrue(app.read_pending)
+                app.close_window()
+                app.confirm_quit()
+                quit_app.assert_called_once()
+                quit_all.assert_called_once()
+                quit_app.reset_mock()
+                quit_all.reset_mock()
+                app.busy = False
+                app.request("reapply", {})
+                self.assertFalse(app.read_pending)
+                app.close_window()
+                app.confirm_quit()
+                quit_app.assert_not_called()
+                quit_all.assert_not_called()
+        finally:
+            app.options.demo = True
+            app.connection = original
+            app.busy = False
+            app.read_pending = False
+            app.render()
+
     def test_reapply_waits_for_discard_confirmation(self):
         app = self.app
         app.entries["AC_PL1"].set_text("90")
